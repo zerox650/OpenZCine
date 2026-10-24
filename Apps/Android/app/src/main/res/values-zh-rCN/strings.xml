@@ -815,4 +815,13 @@
     <string name="a11y_readout_size">图像尺寸</string>
     <string name="a11y_readout_quality">图像质量</string>
     <string name="a11y_readout_media">存储</string>
+
+    <!-- 连接失败文案（ConnectionFailureMessages.kt 的类型化失败） -->
+    <string name="conn_fail_rejected_initiator">相机未能识别这部手机。请在相机上打开“连接到电脑”，为这部手机创建或选择一个配置文件，然后重试。</string>
+    <string name="conn_fail_timeout">相机未及时响应。请检查 Wi-Fi 后重试。</string>
+    <string name="conn_fail_connection_closed">相机结束了连接。请重试。</string>
+    <string name="conn_fail_pairing_challenge_unavailable">相机未提供配对码。请在相机上重新打开“连接到电脑”，然后重新配对。</string>
+    <string name="conn_fail_saved_profile_required">此相机需要与此手机重新配对。请使用“配对新的相机”，或为此手机创建“连接到电脑”配置文件。</string>
+    <string name="conn_fail_non_numeric_host">无法在相机网络上找到相机的地址。请重新加入相机的 Wi-Fi 后重试。</string>
+    <string name="conn_fail_unreachable">无法连接到相机。请检查 Wi-Fi 后重试。</string>
 </resources>

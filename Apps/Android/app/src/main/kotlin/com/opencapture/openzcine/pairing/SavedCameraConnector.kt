@@ -418,6 +418,7 @@ internal class SavedCameraConnector(
             friendlyCameraConnectionFailure(
                 last?.failure,
                 last?.detail?.ifBlank { null } ?: copy.text(R.string.conn_unreachable_detail, record.displayTitle),
+                copy,
             )
         val hint =
             when (record.transport) {

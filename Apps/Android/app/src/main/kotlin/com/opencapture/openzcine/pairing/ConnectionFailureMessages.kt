@@ -1,5 +1,6 @@
 package com.opencapture.openzcine.pairing
 
+import com.opencapture.openzcine.R
 import com.opencapture.opencine.nikon.CameraConnectionFailure
 
 /**
@@ -14,25 +15,33 @@ import com.opencapture.opencine.nikon.CameraConnectionFailure
  * [detail] is shown as is only when the failure has no copy of its own (another device holds the
  * camera, or an untyped failure) and the text is operator-facing; a blank or technical detail
  * reads as unreachable.
+ *
+ * [copy] resolves the guidance in the operator's language; the JVM tests pass a fake that answers
+ * with the resource id, keeping their assertions free of any language's wording.
  */
-internal fun friendlyCameraConnectionFailure(failure: CameraConnectionFailure?, detail: String?): String =
+internal fun friendlyCameraConnectionFailure(
+    failure: CameraConnectionFailure?,
+    detail: String?,
+    copy: PortCopy,
+): String =
     when (failure) {
         CameraConnectionFailure.REJECTED_INITIATOR ->
-            "The camera didn't recognize this phone. On the camera, open Connect to PC and create or choose a profile for this phone, then try again."
-        CameraConnectionFailure.TIMEOUT -> "The camera didn't respond in time. Check Wi‑Fi and try again."
-        CameraConnectionFailure.CONNECTION_CLOSED -> "The camera ended the connection. Try again."
+            copy.text(R.string.conn_fail_rejected_initiator)
+        CameraConnectionFailure.TIMEOUT -> copy.text(R.string.conn_fail_timeout)
+        CameraConnectionFailure.CONNECTION_CLOSED -> copy.text(R.string.conn_fail_connection_closed)
         CameraConnectionFailure.PAIRING_CHALLENGE_UNAVAILABLE ->
-            "The camera did not provide a pairing code. Restart Connect to PC on the camera, then pair again."
+            copy.text(R.string.conn_fail_pairing_challenge_unavailable)
         CameraConnectionFailure.SAVED_PROFILE_REQUIRED ->
-            "This camera needs to pair with this phone again. Use Pair new camera, or create a Connect to PC profile for this phone."
+            copy.text(R.string.conn_fail_saved_profile_required)
         // The transport refusing a non-numeric dial target means some path handed the dialer a
         // non-address key (#327); the operator's remedy is the rejoin/rediscover flow.
         CameraConnectionFailure.NON_NUMERIC_HOST ->
-            "Couldn't find the camera's address on its network. Rejoin the camera's Wi‑Fi and try again."
+            copy.text(R.string.conn_fail_non_numeric_host)
         // Never surface socket errors or PTP-IP packet dumps to the operator.
-        CameraConnectionFailure.UNREACHABLE -> UNREACHABLE_COPY
+        CameraConnectionFailure.UNREACHABLE -> copy.text(R.string.conn_fail_unreachable)
         CameraConnectionFailure.BUSY, CameraConnectionFailure.OTHER, null ->
-            detail?.trim()?.takeIf { it.isNotEmpty() && !it.looksTechnical() } ?: UNREACHABLE_COPY
+            detail?.trim()?.takeIf { it.isNotEmpty() && !it.looksTechnical() }
+                ?: copy.text(R.string.conn_fail_unreachable)
     }
 
 /**
@@ -43,5 +52,3 @@ private fun String.looksTechnical(): Boolean {
     val lower = lowercase()
     return listOf("0x", "ptp", "errno", "exception").any { it in lower }
 }
-
-private const val UNREACHABLE_COPY = "Couldn't reach the camera. Check Wi‑Fi and try again."

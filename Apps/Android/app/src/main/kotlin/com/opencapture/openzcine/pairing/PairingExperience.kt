@@ -671,6 +671,8 @@ public fun PairingExperience(
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
+    /** The typed connect-failure guidance, in the operator's language. */
+    val failureCopy = PortCopy { id, args -> resources.getString(id, *args) }
     // Wi-Fi paths only (PairingPath.usesWifi). The shared gate remembers a denial across process
     // death and sends the next ask to Settings once Android stops showing the dialog.
     val network =
@@ -728,6 +730,7 @@ public fun PairingExperience(
         savedCamera: SavedCameraRecord,
         unreachableMessage: String,
         firstTimePairing: Boolean,
+        copy: PortCopy = failureCopy,
     ) {
         phase = PairingPhase.Handshaking
         work.value =
@@ -804,7 +807,7 @@ public fun PairingExperience(
                             onDiagnosticPhase("failed.reconnect")
                             phase =
                                 PairingPhase.Error(
-                                    friendlyCameraConnectionFailure(null, unreachableMessage),
+                                    friendlyCameraConnectionFailure(null, unreachableMessage, copy),
                                 )
                         }
                     } else if (connected != null) {
@@ -829,6 +832,7 @@ public fun PairingExperience(
                                 friendlyCameraConnectionFailure(
                                     failed.failure,
                                     failed.detail.takeIf { it.isNotBlank() } ?: unreachableMessage,
+                                    copy,
                                 ),
                             )
                     }
@@ -846,7 +850,7 @@ public fun PairingExperience(
                         onDiagnosticPhase("failed.ptp")
                     }
                     phase =
-                        PairingPhase.Error(friendlyCameraConnectionFailure(null, unreachableMessage))
+                        PairingPhase.Error(friendlyCameraConnectionFailure(null, unreachableMessage, copy))
                 } finally {
                     progressWatcher.cancel()
                 }

@@ -815,4 +815,13 @@
     <string name="a11y_readout_size">Image size</string>
     <string name="a11y_readout_quality">Image quality</string>
     <string name="a11y_readout_media">Storage</string>
+
+    <!-- Connection failure copy for the typed CameraConnectionFailure (ConnectionFailureMessages.kt) -->
+    <string name="conn_fail_rejected_initiator">The camera didn\'t recognize this phone. On the camera, open Connect to PC and create or choose a profile for this phone, then try again.</string>
+    <string name="conn_fail_timeout">The camera didn\'t respond in time. Check Wi‑Fi and try again.</string>
+    <string name="conn_fail_connection_closed">The camera ended the connection. Try again.</string>
+    <string name="conn_fail_pairing_challenge_unavailable">The camera did not provide a pairing code. Restart Connect to PC on the camera, then pair again.</string>
+    <string name="conn_fail_saved_profile_required">This camera needs to pair with this phone again. Use Pair new camera, or create a Connect to PC profile for this phone.</string>
+    <string name="conn_fail_non_numeric_host">Couldn\'t find the camera\'s address on its network. Rejoin the camera\'s Wi‑Fi and try again.</string>
+    <string name="conn_fail_unreachable">Couldn\'t reach the camera. Check Wi‑Fi and try again.</string>
 </resources>

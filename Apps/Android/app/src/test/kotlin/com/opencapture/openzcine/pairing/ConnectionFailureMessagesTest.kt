@@ -1,5 +1,6 @@
 package com.opencapture.openzcine.pairing
 
+import com.opencapture.openzcine.R
 import com.opencapture.opencine.nikon.CameraConnectionFailure
 import java.nio.file.Path
 import kotlin.io.path.readText
@@ -10,11 +11,13 @@ import org.junit.Test
 
 /** The copy for a failed connect comes from the typed failure, never from its message (A4-45). */
 class ConnectionFailureMessagesTest {
+    /** The fake copy answers with the resource id, as the app's other pairing tests do. */
+    private val copy = PortCopy { id, args -> "$id ${args.joinToString(" ")}".trim() }
+
     @Test
     fun `a refused initiator maps to guidance about Connect to PC, whatever the message says`() {
-        val message = friendlyCameraConnectionFailure(CameraConnectionFailure.REJECTED_INITIATOR, "Init_Fail 1")
-        assertTrue(message.contains("didn't recognize this phone"))
-        assertTrue(message.contains("Connect to PC"))
+        val message = friendlyCameraConnectionFailure(CameraConnectionFailure.REJECTED_INITIATOR, "Init_Fail 1", copy)
+        assertEquals("${R.string.conn_fail_rejected_initiator}", message)
     }
 
     /**
@@ -24,10 +27,11 @@ class ConnectionFailureMessagesTest {
     @Test
     fun `an unreachable camera gets reachability guidance and no packet text`() {
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
+            "${R.string.conn_fail_unreachable}",
             friendlyCameraConnectionFailure(
                 CameraConnectionFailure.UNREACHABLE,
                 "The camera rejected the PTP-IP handshake: unspecified.",
+                copy,
             ),
         )
         assertFalse(CameraConnectionFailure.UNREACHABLE.savedProfileUnavailable)
@@ -36,12 +40,12 @@ class ConnectionFailureMessagesTest {
     @Test
     fun `empty failure falls back to reachability guidance`() {
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
-            friendlyCameraConnectionFailure(null, null),
+            "${R.string.conn_fail_unreachable}",
+            friendlyCameraConnectionFailure(null, null, copy),
         )
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
-            friendlyCameraConnectionFailure(CameraConnectionFailure.OTHER, " "),
+            "${R.string.conn_fail_unreachable}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.OTHER, " ", copy),
         )
     }
 
@@ -53,36 +57,36 @@ class ConnectionFailureMessagesTest {
     @Test
     fun `numeric IPv4 transport refusal maps to rejoin guidance`() {
         assertEquals(
-            "Couldn't find the camera's address on its network. Rejoin the camera's Wi‑Fi and try again.",
-            friendlyCameraConnectionFailure(CameraConnectionFailure.NON_NUMERIC_HOST, "anything"),
+            "${R.string.conn_fail_non_numeric_host}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.NON_NUMERIC_HOST, "anything", copy),
         )
     }
 
     @Test
     fun `typed failures with their own copy`() {
         assertEquals(
-            "The camera didn't respond in time. Check Wi‑Fi and try again.",
-            friendlyCameraConnectionFailure(CameraConnectionFailure.TIMEOUT, "Init timed out."),
+            "${R.string.conn_fail_timeout}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.TIMEOUT, "Init timed out.", copy),
         )
         assertEquals(
-            "The camera ended the connection. Try again.",
-            friendlyCameraConnectionFailure(CameraConnectionFailure.CONNECTION_CLOSED, null),
+            "${R.string.conn_fail_connection_closed}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.CONNECTION_CLOSED, null, copy),
         )
-        assertTrue(
-            friendlyCameraConnectionFailure(CameraConnectionFailure.PAIRING_CHALLENGE_UNAVAILABLE, null)
-                .contains("did not provide a pairing code"),
+        assertEquals(
+            "${R.string.conn_fail_pairing_challenge_unavailable}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.PAIRING_CHALLENGE_UNAVAILABLE, null, copy),
         )
-        assertTrue(
-            friendlyCameraConnectionFailure(CameraConnectionFailure.SAVED_PROFILE_REQUIRED, null)
-                .contains("needs to pair with this phone again"),
+        assertEquals(
+            "${R.string.conn_fail_saved_profile_required}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.SAVED_PROFILE_REQUIRED, null, copy),
         )
     }
 
     @Test
     fun `plain operator text is preserved`() {
-        assertEquals("USB cable unplugged.", friendlyCameraConnectionFailure(null, "USB cable unplugged."))
+        assertEquals("USB cable unplugged.", friendlyCameraConnectionFailure(null, "USB cable unplugged.", copy))
         val busy = "Another device is connected to this camera. Disconnect it there, then try again."
-        assertEquals(busy, friendlyCameraConnectionFailure(CameraConnectionFailure.BUSY, busy))
+        assertEquals(busy, friendlyCameraConnectionFailure(CameraConnectionFailure.BUSY, busy, copy))
     }
 
     /**
@@ -92,25 +96,27 @@ class ConnectionFailureMessagesTest {
     @Test
     fun `a technical failure detail falls back to reachability guidance`() {
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
-            friendlyCameraConnectionFailure(CameraConnectionFailure.OTHER, "PTP-IP response 0x2019"),
+            "${R.string.conn_fail_unreachable}",
+            friendlyCameraConnectionFailure(CameraConnectionFailure.OTHER, "PTP-IP response 0x2019", copy),
         )
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
-            friendlyCameraConnectionFailure(null, "USB bulk transfer failed 0x80070005"),
+            "${R.string.conn_fail_unreachable}",
+            friendlyCameraConnectionFailure(null, "USB bulk transfer failed 0x80070005", copy),
         )
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
+            "${R.string.conn_fail_unreachable}",
             friendlyCameraConnectionFailure(
                 CameraConnectionFailure.OTHER,
                 "java.lang.IllegalStateException: unexpected packet",
+                copy,
             ),
         )
         assertEquals(
-            "Couldn't reach the camera. Check Wi‑Fi and try again.",
+            "${R.string.conn_fail_unreachable}",
             friendlyCameraConnectionFailure(
                 CameraConnectionFailure.OTHER,
                 "read failed: errno 54 (Connection reset by peer)",
+                copy,
             ),
         )
     }
