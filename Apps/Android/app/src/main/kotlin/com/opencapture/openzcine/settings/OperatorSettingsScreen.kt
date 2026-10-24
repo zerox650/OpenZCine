@@ -283,7 +283,7 @@ internal fun OperatorSettingsScreen(
         choices = listOf(
             MonitorSettingsChoiceSource(stringResource(R.string.settings_stream_preset),
                 stringResource(R.string.help_link_stream_preset),
-                LiveViewStreamPreset.entries.map { MonitorDisplayChoice(it.name, it.label) }, settings.streamPreset.name,
+                LiveViewStreamPreset.entries.map { MonitorDisplayChoice(it.name, resources.getString(it.settingsLabelResource)) }, settings.streamPreset.name,
                 select = { id -> LiveViewStreamPreset.entries.firstOrNull { it.name == id }?.let {
                     settings.streamPreset = it; emitHaptic()
                 } }),

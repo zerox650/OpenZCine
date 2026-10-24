@@ -1064,4 +1064,9 @@
     <string name="monitor_media_remaining">Media remaining</string>
     <string name="monitor_codec_color_title">CODEC · COLOR</string>
     <string name="camera_shutter_lock">Shutter Lock</string>
+    <string name="wear_record_reject_monitor">Open the live monitor on the phone.</string>
+    <string name="wear_record_reject_camera">Connect a camera on the phone.</string>
+    <string name="wear_record_reject_pending">A recording command is already pending.</string>
+    <string name="wear_record_reject_confirmation">Finish the pending record confirmation on the phone.</string>
+    <string name="wear_record_reject_control">Wait for the active camera control.</string>
 </resources>

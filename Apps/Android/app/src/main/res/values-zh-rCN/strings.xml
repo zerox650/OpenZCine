@@ -1064,4 +1064,9 @@
     <string name="monitor_media_remaining">剩余媒体空间</string>
     <string name="monitor_codec_color_title">CODEC · 色彩</string>
     <string name="camera_shutter_lock">快门锁定</string>
+    <string name="wear_record_reject_monitor">请在手机上打开实时监视画面。</string>
+    <string name="wear_record_reject_camera">请在手机上连接相机。</string>
+    <string name="wear_record_reject_pending">已有一个待处理的录制命令。</string>
+    <string name="wear_record_reject_confirmation">请先在手机上完成待处理的录制确认。</string>
+    <string name="wear_record_reject_control">请等待当前相机控制完成。</string>
 </resources>

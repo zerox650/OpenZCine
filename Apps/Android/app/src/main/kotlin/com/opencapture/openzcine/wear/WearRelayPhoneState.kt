@@ -1,10 +1,13 @@
 package com.opencapture.openzcine.wear
 
+import android.content.Context
 import com.opencapture.opencine.core.PowerStatus
 import com.opencapture.opencine.nikon.CameraPropertySnapshot
 import com.opencapture.opencine.nikon.CameraRecordingException
 import com.opencapture.opencine.nikon.CameraSessionState
 import com.opencapture.opencine.nikon.CameraStorageStatus
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import com.opencapture.openzcine.wearrelay.WatchCommandResult
 import com.opencapture.openzcine.wearrelay.WatchConnectionState
 import com.opencapture.openzcine.wearrelay.WatchRecordState
@@ -28,13 +31,14 @@ internal data class WearRecordCommandSafety(
 )
 
 /** Returns the operator-safe reason a wearable record request cannot run, if any. */
-internal fun wearRecordCommandRejection(safety: WearRecordCommandSafety): String? =
+internal fun wearRecordCommandRejection(safety: WearRecordCommandSafety, context: Context? = null): String? =
     when {
-        !safety.applicationResumed || !safety.monitorFront -> "Open the live monitor on the phone."
-        !safety.cameraConnected -> "Connect a camera on the phone."
-        safety.recordCommandPending -> "A recording command is already pending."
-        safety.recordConfirmationPending -> "Finish the pending record confirmation on the phone."
-        safety.cameraControlPending -> "Wait for the active camera control."
+        !safety.applicationResumed || !safety.monitorFront ->
+            lstr(context, R.string.wear_record_reject_monitor)
+        !safety.cameraConnected -> lstr(context, R.string.wear_record_reject_camera)
+        safety.recordCommandPending -> lstr(context, R.string.wear_record_reject_pending)
+        safety.recordConfirmationPending -> lstr(context, R.string.wear_record_reject_confirmation)
+        safety.cameraControlPending -> lstr(context, R.string.wear_record_reject_control)
         else -> null
     }
 
@@ -42,11 +46,12 @@ internal fun wearRecordCommandRejection(safety: WearRecordCommandSafety): String
 internal fun rejectedWearRecordResult(
     safety: WearRecordCommandSafety,
     isRecording: Boolean,
+    context: Context? = null,
 ): WatchCommandResult =
     WatchCommandResult(
         accepted = false,
         isRecording = isRecording,
-        error = wearRecordCommandRejection(safety) ?: "unavailable",
+        error = wearRecordCommandRejection(safety, context) ?: "unavailable",
     )
 
 /**
@@ -58,10 +63,11 @@ internal fun rejectedWearRecordResult(
 internal suspend fun executeWearRecordCommand(
     safety: WearRecordCommandSafety,
     isRecording: Boolean,
+    context: Context? = null,
     setRecording: suspend (Boolean) -> Unit,
 ): WatchCommandResult {
-    if (wearRecordCommandRejection(safety) != null) {
-        return rejectedWearRecordResult(safety, isRecording)
+    if (wearRecordCommandRejection(safety, context) != null) {
+        return rejectedWearRecordResult(safety, isRecording, context)
     }
     val target = !isRecording
     return try {

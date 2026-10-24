@@ -1027,7 +1027,7 @@ internal fun MonitorScreen(
                         recordConfirmationPending = recordConfirmationOpen,
                         cameraControlPending = pendingCommandControl != null,
                     )
-                executeWearRecordCommand(safety, recording) { target ->
+                executeWearRecordCommand(safety, recording, context = appContext) { target ->
                     if (source !== session || !admission.admits(source)) throw CameraRecordingException.CommandRejected
                     val snapshot = commonSession.refresh()
                     val dispatch = com.opencapture.opencine.core.CommandDispatchAdmission(

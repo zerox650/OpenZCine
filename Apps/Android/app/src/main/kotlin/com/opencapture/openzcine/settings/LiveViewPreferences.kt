@@ -17,6 +17,19 @@ public enum class LiveViewStreamPreset(
     QUALITY(2, "Quality"),
     ;
 
+    /**
+     * Operator-facing name resolved through app resources. The three words are the same
+     * ones [LiveViewQualityBias] shows, so the picker reuses its translated labels rather
+     * than carrying a second copy that could drift.
+     */
+    public val settingsLabelResource: Int
+        get() =
+            when (this) {
+                FAST -> R.string.settings_quality_bias_fast
+                BALANCED -> R.string.settings_quality_bias_balanced
+                QUALITY -> R.string.settings_quality_bias_quality
+            }
+
     public companion object {
         /**
          * What a setup with no chosen preset runs at. The smallest preset is ~320x240 - too
