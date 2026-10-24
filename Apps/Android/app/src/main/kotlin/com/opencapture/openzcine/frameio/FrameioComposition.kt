@@ -60,6 +60,7 @@ internal fun frameioArtifactPreparer(context: Context, lutLibrary: AndroidLutLib
         exportRoot = frameioExportRoot(context),
         lutProvider = AndroidFrameioLutProvider(lutLibrary),
         exporter = AndroidMedia3FrameioLutVideoExporter(context),
+        context = context,
     )
 
 private fun shareReadyRoot(context: Context) = context.cacheDir.resolve("share/ready").toPath()

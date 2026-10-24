@@ -28,7 +28,9 @@ import com.opencapture.opencine.runtime.MonitorLutMovieExporter
 import com.opencapture.opencine.runtime.MonitorMovieExportErrorFactory
 import com.opencapture.opencine.runtime.MonitorMovieExportFailure
 import com.opencapture.openzcine.FeedLutSelection
+import com.opencapture.openzcine.R
 import com.opencapture.openzcine.bridge.SwiftCore
+import com.opencapture.openzcine.lstr
 import com.opencapture.openzcine.lut.AndroidLutLibrary
 import com.opencapture.openzcine.media.StagedMediaShare
 import java.nio.file.Files
@@ -192,7 +194,7 @@ internal class AndroidMedia3FrameioLutVideoExporter(
                 override fun cancel() { transformer.cancel() }
             }
         },
-        errors = frameioMovieExportErrors,
+        errors = frameioMovieExportErrors(this.context),
         mainDispatcher = mainDispatcher,
     )
 
@@ -203,9 +205,10 @@ internal class AndroidMedia3FrameioLutVideoExporter(
 /** Composition supplies the approved LUT, branded filename and existing operator errors. */
 internal class AndroidFrameioArtifactPreparer(
     exportRoot: Path,
-    private val lutProvider: FrameioLutProvider,
+    private val     lutProvider: FrameioLutProvider,
     exporter: FrameioLutVideoExporter,
     deleteExport: (Path) -> Boolean = Files::deleteIfExists,
+    context: Context? = null,
 ) : FrameioArtifactPreparer {
     private val owner = MonitorMovieExportPreparer(
         exportRoot = exportRoot,
@@ -213,7 +216,7 @@ internal class AndroidFrameioArtifactPreparer(
             override suspend fun export(source: Path, target: Path, lut: MonitorMovieExportLut, onProgress: suspend (Double) -> Unit) =
                 exporter.export(source, target, lut, onProgress)
         },
-        errors = frameioMovieExportErrors,
+        errors = frameioMovieExportErrors(context),
         ownedFilenamePrefix = "frameio",
         fallbackFilename = "OpenZCine",
         deleteExport = deleteExport,
@@ -241,18 +244,17 @@ internal class AndroidFrameioArtifactPreparer(
     )
 }
 
-private val frameioMovieExportErrors = MonitorMovieExportErrorFactory { reason, filename ->
+private fun frameioMovieExportErrors(context: Context? = null) = MonitorMovieExportErrorFactory { reason, filename ->
     FrameioDeliveryException(when (reason) {
-        MonitorMovieExportFailure.UNSUPPORTED_BAKE -> "$filename isn't a video proxy that can receive a baked LUT."
-        MonitorMovieExportFailure.APPROVED_LUT_UNAVAILABLE -> "The selected LUT is no longer approved for export. Re-select or re-import it and try again."
-        MonitorMovieExportFailure.INCOMPLETE_EXPORT -> "The LUT-baked export did not produce a complete video."
-        MonitorMovieExportFailure.INVALID_MOV_FILE -> "The LUT-baked MOV export is not a complete regular file."
-        MonitorMovieExportFailure.INCOMPLETE_MOV_HEADER -> "The LUT-baked MOV export has an incomplete media header."
-        MonitorMovieExportFailure.UNSUPPORTED_MOV_HEADER -> "The LUT-baked MOV export has an unsupported media header."
-        MonitorMovieExportFailure.CODEC_FAILED -> "OpenZCine couldn't bake the selected LUT for this clip. " +
-            "The source may use a codec or HDR mode this device cannot export safely."
-        MonitorMovieExportFailure.CODEC_STALLED -> "OpenZCine stopped the LUT export because this device's media encoder stopped making progress."
-        MonitorMovieExportFailure.INCOMPLETE_CLEANUP -> "OpenZCine couldn't remove the incomplete Frame.io export."
-        MonitorMovieExportFailure.TEMPORARY_CLEANUP -> "OpenZCine couldn't remove the temporary Frame.io export."
+        MonitorMovieExportFailure.UNSUPPORTED_BAKE -> lstr(context, R.string.frameio_export_unsupported_bake, filename)
+        MonitorMovieExportFailure.APPROVED_LUT_UNAVAILABLE -> lstr(context, R.string.frameio_export_lut_unavailable)
+        MonitorMovieExportFailure.INCOMPLETE_EXPORT -> lstr(context, R.string.frameio_export_incomplete)
+        MonitorMovieExportFailure.INVALID_MOV_FILE -> lstr(context, R.string.frameio_export_invalid_mov)
+        MonitorMovieExportFailure.INCOMPLETE_MOV_HEADER -> lstr(context, R.string.frameio_export_incomplete_header)
+        MonitorMovieExportFailure.UNSUPPORTED_MOV_HEADER -> lstr(context, R.string.frameio_export_unsupported_header)
+        MonitorMovieExportFailure.CODEC_FAILED -> lstr(context, R.string.frameio_export_codec_failed)
+        MonitorMovieExportFailure.CODEC_STALLED -> lstr(context, R.string.frameio_export_codec_stalled)
+        MonitorMovieExportFailure.INCOMPLETE_CLEANUP -> lstr(context, R.string.frameio_export_cleanup_incomplete)
+        MonitorMovieExportFailure.TEMPORARY_CLEANUP -> lstr(context, R.string.frameio_export_cleanup_temporary)
     })
 }

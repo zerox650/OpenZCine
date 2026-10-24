@@ -1161,4 +1161,14 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="media_date_window_today">TODAY</string>
     <string name="media_date_window_7_days">7 DAYS</string>
     <string name="media_date_window_30_days">30 DAYS</string>
+    <string name="frameio_export_unsupported_bake">%1$s isn\'t a video proxy that can receive a baked LUT.</string>
+    <string name="frameio_export_lut_unavailable">The selected LUT is no longer approved for export. Re-select or re-import it and try again.</string>
+    <string name="frameio_export_incomplete">The LUT-baked export did not produce a complete video.</string>
+    <string name="frameio_export_invalid_mov">The LUT-baked MOV export is not a complete regular file.</string>
+    <string name="frameio_export_incomplete_header">The LUT-baked MOV export has an incomplete media header.</string>
+    <string name="frameio_export_unsupported_header">The LUT-baked MOV export has an unsupported media header.</string>
+    <string name="frameio_export_codec_failed">OpenZCine couldn\'t bake the selected LUT for this clip. The source may use a codec or HDR mode this device cannot export safely.</string>
+    <string name="frameio_export_codec_stalled">OpenZCine stopped the LUT export because this device\'s media encoder stopped making progress.</string>
+    <string name="frameio_export_cleanup_incomplete">OpenZCine couldn\'t remove the incomplete Frame.io export.</string>
+    <string name="frameio_export_cleanup_temporary">OpenZCine couldn\'t remove the temporary Frame.io export.</string>
 </resources>

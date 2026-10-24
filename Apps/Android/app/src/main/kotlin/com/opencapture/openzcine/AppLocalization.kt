@@ -175,6 +175,16 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.media_date_window_today to "TODAY",
     R.string.media_date_window_7_days to "7 DAYS",
     R.string.media_date_window_30_days to "30 DAYS",
+    R.string.frameio_export_unsupported_bake to "%1\$s isn\'t a video proxy that can receive a baked LUT.",
+    R.string.frameio_export_lut_unavailable to "The selected LUT is no longer approved for export. Re-select or re-import it and try again.",
+    R.string.frameio_export_incomplete to "The LUT-baked export did not produce a complete video.",
+    R.string.frameio_export_invalid_mov to "The LUT-baked MOV export is not a complete regular file.",
+    R.string.frameio_export_incomplete_header to "The LUT-baked MOV export has an incomplete media header.",
+    R.string.frameio_export_unsupported_header to "The LUT-baked MOV export has an unsupported media header.",
+    R.string.frameio_export_codec_failed to "OpenZCine couldn\'t bake the selected LUT for this clip. The source may use a codec or HDR mode this device cannot export safely.",
+    R.string.frameio_export_codec_stalled to "OpenZCine stopped the LUT export because this device\'s media encoder stopped making progress.",
+    R.string.frameio_export_cleanup_incomplete to "OpenZCine couldn\'t remove the incomplete Frame.io export.",
+    R.string.frameio_export_cleanup_temporary to "OpenZCine couldn\'t remove the temporary Frame.io export.",
 )
 
 /**

@@ -1161,4 +1161,14 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="media_date_window_today">今天</string>
     <string name="media_date_window_7_days">近 7 天</string>
     <string name="media_date_window_30_days">近 30 天</string>
+    <string name="frameio_export_unsupported_bake">%1$s 不是可以烘焙 LUT 的视频代理片段。</string>
+    <string name="frameio_export_lut_unavailable">所选 LUT 已不再获准导出。请重新选择或重新导入后再试。</string>
+    <string name="frameio_export_incomplete">LUT 烘焙导出未生成完整的视频。</string>
+    <string name="frameio_export_invalid_mov">LUT 烘焙的 MOV 导出不是一个完整的常规文件。</string>
+    <string name="frameio_export_incomplete_header">LUT 烘焙的 MOV 导出的媒体头不完整。</string>
+    <string name="frameio_export_unsupported_header">LUT 烘焙的 MOV 导出使用了不受支持的媒体头。</string>
+    <string name="frameio_export_codec_failed">OpenZCine 无法为此片段烘焙所选 LUT。源视频可能使用了本设备无法安全导出的编码格式或 HDR 模式。</string>
+    <string name="frameio_export_codec_stalled">由于本设备的媒体编码器停止推进，OpenZCine 已中止 LUT 导出。</string>
+    <string name="frameio_export_cleanup_incomplete">OpenZCine 无法移除未完成的 Frame.io 导出文件。</string>
+    <string name="frameio_export_cleanup_temporary">OpenZCine 无法移除临时的 Frame.io 导出文件。</string>
 </resources>
