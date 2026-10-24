@@ -538,7 +538,7 @@ class MainActivity : ComponentActivity() {
                 // The one note sink: refusals and interruptions show on the monitor (Pocket's placement).
                 val monitorNote = remember { mutableStateOf<String?>(null) }
                 val shell = remember(camerasModel, connectionScope) {
-                    ShellModel(camerasModel, MonitorControlModel(connectionScope)).also {
+                    ShellModel(camerasModel, MonitorControlModel(connectionScope, context = nikonContext)).also {
                         it.control.onNote = { note -> monitorNote.value = note }
                         if (pairingScript != null) it.beginPairing()
                         if (debugInitialSettingsTab != null) it.open(ShellModel.Cover.SETTINGS)
@@ -715,8 +715,10 @@ class MainActivity : ComponentActivity() {
                         remember(watching) { mutableStateOf(false) }
                     val watchCommon = remember(watching.session) { shellSessions.acquire(watching.session) }
                     val watchNote = remember(watching) { mutableStateOf<String?>(null) }
+                    // Hoisted out of remember(): LocalContext.current is @Composable.
+                    val watchControlContext = LocalContext.current
                     val watchControl = remember(watchCommon) {
-                        MonitorControlModel(connectionScope).also { it.bind(watchCommon); it.onNote = { note -> watchNote.value = note } }
+                        MonitorControlModel(connectionScope, context = watchControlContext).also { it.bind(watchCommon); it.onNote = { note -> watchNote.value = note } }
                     }
                     // The watcher's display owner. It has no shell monitor to edit in place, so Settings offers
                     // the Display rows without Edit view.
