@@ -193,9 +193,10 @@ internal fun nearbyBroadcastItems(broadcasts: List<RelayBroadcast>, networkFilte
         if (networkFiltersDiscovery) {
             listOf(
                 CameraItem(
-                    id = FILTER_NOTICE_ID, name = "This network", subtitle = "Devices below were found directly",
+                    id = FILTER_NOTICE_ID, name = stringResource(R.string.nearby_this_network),
+                    subtitle = stringResource(R.string.nearby_direct_subtitle),
                     status = "", actionTitle = "", isAvailable = false,
-                    failure = MonitorConnectFailure("Discovery is filtered", stringResource(R.string.saved_network_filters_discovery), emptyList()),
+                    failure = MonitorConnectFailure(stringResource(R.string.nearby_discovery_filtered), stringResource(R.string.saved_network_filters_discovery), emptyList()),
                 ),
             )
         } else {
@@ -205,8 +206,9 @@ internal fun nearbyBroadcastItems(broadcasts: List<RelayBroadcast>, networkFilte
     return notice +
         broadcasts.map {
             CameraItem(
-                id = RELAY_ROW_PREFIX + it.name, name = it.name, subtitle = "Live feed from another device", badge = "LIVE",
-                status = "Watch the picture without controlling the camera.", actionTitle = watch,
+                id = RELAY_ROW_PREFIX + it.name, name = it.name,
+                subtitle = stringResource(R.string.nearby_live_subtitle), badge = "LIVE",
+                status = stringResource(R.string.nearby_watch_status), actionTitle = watch,
             )
         }
 }

@@ -1,5 +1,6 @@
 package com.opencapture.openzcine
 
+import android.content.Context
 import com.opencapture.opencine.nikon.CameraSession
 import com.opencapture.opencine.nikon.StillReleasePoll
 import com.opencapture.opencine.nikon.StillShutterHold
@@ -27,6 +28,7 @@ internal class StillCaptureController(
     /** Injectable clock/pacing for tests. */
     private val pollDelayMillis: Long = 350L,
     private val releaseTimeoutMillis: Long = 45_000L,
+    private val context: Context? = null,
 ) {
     private val _isCapturing = MutableStateFlow(false)
 
@@ -148,7 +150,7 @@ internal class StillCaptureController(
                         // terminated the latched run.
                         if (press.burstRuns == 0) {
                             runCatching {
-                                onFailure?.invoke("The camera refused the still release.")
+                                onFailure?.invoke(lstr(context, R.string.still_release_refused))
                             }
                         }
                         break
@@ -165,7 +167,7 @@ internal class StillCaptureController(
             // resets below; the property poll restores authoritative state.
             runCatching {
                 onFailure?.invoke(
-                    error.message ?: "The camera did not accept the still release.",
+                    error.message ?: lstr(context, R.string.still_release_failed),
                 )
             }
         } finally {

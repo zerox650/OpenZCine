@@ -341,7 +341,7 @@ internal fun MonitorScreen(
     val cameraProperties by session.cameraProperties.collectAsState()
     // Real press-tracked still release over the session (single, bulb/time,
     // and hold-to-burst with the remote-mode bracket). [verify-on-HW]
-    val stillCapture = remember(session) { StillCaptureController(session) }
+    val stillCapture = remember(session) { StillCaptureController(session, context = appContext) }
     val stillCapturing by stillCapture.isCapturing.collectAsState()
     // Post-capture instant playback (PLAY view-assist tool).
     val instantReview = remember(session) { InstantReviewController(session) }

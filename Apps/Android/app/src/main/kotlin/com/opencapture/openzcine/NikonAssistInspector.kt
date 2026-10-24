@@ -9,6 +9,7 @@ import com.opencapture.opencine.cameracontrols.LutPickerLayout
 import com.opencapture.opencine.cameracontrols.LutPickerFilter
 import com.opencapture.opencine.cameracontrols.LutPickerEmpty
 import com.opencapture.opencine.cameracontrols.LutPickerAction
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,7 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.opencapture.monitorui.MonitorAssistTool
+import com.opencapture.openzcine.R
 import com.opencapture.openzcine.lut.AndroidLutLibrary
 import com.opencapture.openzcine.lut.StoredLutCategory
 import com.opencapture.openzcine.lut.reconciledLutSelectionAfterDeletion
@@ -64,8 +68,9 @@ internal val nikonUsageSeed =
     )
 
 /** Output-space filter supplied as a value to the shared catalogue. */
-private enum class RedOutputSpaceFilter(val label: String, val needle: String?) {
-    ALL("All", null), REC709("Rec.709", "REC709"), REC2020("Rec.2020", "REC2020"),
+private enum class RedOutputSpaceFilter(@StringRes val labelRes: Int, val needle: String?) {
+    ALL(R.string.lut_filter_all, null), REC709(R.string.lut_filter_rec709, "REC709"),
+    REC2020(R.string.lut_filter_rec2020, "REC2020"),
 }
 
 /** Nikon supplies catalogue values/actions; the shared picker owns tabs, rows and confirmation. */
@@ -78,6 +83,7 @@ internal fun NikonLutOptions(
     includesComparison: Boolean = true,
 ) {
     val shared = assists.shared
+    val context = LocalContext.current
     val stored = lutLibrary?.entries?.collectAsState()?.value.orEmpty()
     val scope = rememberCoroutineScope()
     var feedback by remember { mutableStateOf<String?>(null) }
@@ -96,7 +102,7 @@ internal fun NikonLutOptions(
                 assists.selectLut(FeedLutSelection.Stored(entry.selection))
                 feedback = null
             } else feedback = library.failures.value[entry.selection]?.operatorMessage
-                ?: "This LUT could not be prepared."
+                ?: context.getString(R.string.lut_prepare_failed)
         }
     }
     fun library(category: MonitorLutCategory): LutPickerLibrary {
@@ -109,16 +115,17 @@ internal fun NikonLutOptions(
             listOf(preferred) + filtered.filterNot { it == preferred } else filtered
         val active = (selected as? FeedLutSelection.Stored)?.value?.takeIf { it.category == category }
         return LutPickerLibrary(
-            title = if (category == StoredLutCategory.RED) "RED" else "Custom",
+            title = if (category == StoredLutCategory.RED) "RED" else context.getString(R.string.lut_category_custom),
             entries = entries.map(::storedEntry), isCurrent = active != null,
             selectedId = active?.fileName,
             representative = preferred?.takeIf { it in filtered }?.let(::storedEntry)
                 ?: entries.firstOrNull()?.let(::storedEntry),
             layout = if (category == StoredLutCategory.CUSTOM) LutPickerLayout.FILES else LutPickerLayout.DRUM,
             filter = if (category == StoredLutCategory.RED && all.isNotEmpty()) LutPickerFilter(
-                RedOutputSpaceFilter.entries.map { it.label }, filter.label,
+                RedOutputSpaceFilter.entries.map { context.getString(it.labelRes) },
+                context.getString(filter.labelRes),
                 onSelect = { label ->
-                    filter = RedOutputSpaceFilter.entries.first { it.label == label }
+                    filter = RedOutputSpaceFilter.entries.first { context.getString(it.labelRes) == label }
                     val visible = all.filter {
                         filter.needle == null || it.selection.fileName.uppercase().contains(filter.needle!!)
                     }
@@ -128,9 +135,13 @@ internal fun NikonLutOptions(
             ) else null,
             markedIds = if (category == StoredLutCategory.RED) setOfNotNull(preferred?.selection?.fileName) else emptySet(),
             empty = if (category == StoredLutCategory.RED) LutPickerEmpty(
-                "RED IPP2 LUTs", "Download RED's official looks. You'll accept RED's terms.",
-                LutPickerAction("Download from RED", onOpenRedDownload),
-            ) else LutPickerEmpty("No custom LUTs yet", "Import a .cube file to add your own look."),
+                context.getString(R.string.lut_red_ipp2),
+                context.getString(R.string.lut_red_ipp2_body),
+                LutPickerAction(context.getString(R.string.lut_red_download_action), onOpenRedDownload),
+            ) else LutPickerEmpty(
+                context.getString(R.string.lut_custom_empty_title),
+                context.getString(R.string.lut_custom_empty_body),
+            ),
             onSelect = { choice -> entries.firstOrNull { it.selection.fileName == choice.id }?.let(::apply) },
             onDelete = { choice ->
                 val entry = all.firstOrNull { it.selection.fileName == choice.id }
@@ -141,8 +152,8 @@ internal fun NikonLutOptions(
                             assists.selectLut(reconciledLutSelectionAfterDeletion(
                                 assists.lut, entry.selection, owner.firstPreparedReplacement(entry.selection),
                             ))
-                        feedback = "${entry.displayName} deleted."
-                    } else feedback = "This LUT could not be deleted."
+                        feedback = context.getString(R.string.lut_deleted, entry.displayName)
+                    } else feedback = context.getString(R.string.lut_delete_failed)
                 }
             },
             onImport = if (category == StoredLutCategory.CUSTOM) onRequestLutImport else null,
@@ -151,7 +162,7 @@ internal fun NikonLutOptions(
     val active = (selected as? FeedLutSelection.BuiltIn)?.value
     LUTPicker(
         libraries = listOf(
-            LutPickerLibrary("Built-in", builtIn, active != null, active?.name,
+            LutPickerLibrary(stringResource(R.string.lut_library_built_in), builtIn, active != null, active?.name,
                 onSelect = { entry ->
                     assists.selectLut(FeedLutSelection.BuiltIn(FeedLut.valueOf(entry.id)))
                     feedback = null
