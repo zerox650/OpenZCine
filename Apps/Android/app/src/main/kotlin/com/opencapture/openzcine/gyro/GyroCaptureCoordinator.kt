@@ -17,6 +17,7 @@ import com.opencapture.opencine.nikon.LiveCameraLevel
 import com.opencapture.opencine.nikon.SwiftCoreCameraSession
 import com.opencapture.opencine.nikon.SwiftCoreLiveFrameSource
 import com.opencapture.opencine.nikon.metadataOnly
+import com.opencapture.openzcine.R
 import com.opencapture.openzcine.bridge.SwiftCore
 import com.opencapture.monitorui.MonitorTiltVector
 import com.opencapture.monitorui.MonitorDeviceTiltMath
@@ -38,6 +39,11 @@ internal data class GyroCaptureState(
     val enabled: Boolean = false,
     val available: Boolean = false,
     val status: String = "Off",
+    /**
+     * The wire kind behind [status]: the status pill and the settings row switch on it, so the
+     * displayed [status] text stays free to localize.
+     */
+    val statusKind: GyroStatusKind = GyroStatusKind.OFF,
     val logging: Boolean = false,
     val failed: Boolean = false,
     val logs: List<GyroLogEntry> = emptyList(),
@@ -48,6 +54,11 @@ internal data class GyroCaptureState(
     val mountCalibration: String? = null,
     val calibration: GyroCalibrationState = GyroCalibrationState(),
 )
+
+/** The kind behind [GyroCaptureState.status]; never shown raw, only switched on. */
+internal enum class GyroStatusKind {
+    OFF, UNAVAILABLE, WAITING_FOR_CAMERA, STARTING, READY, LOGGING, SAVING, SAMPLE_GAPS,
+}
 
 private val gyroCaptureDispatcher = Dispatchers.IO.limitedParallelism(1)
 
@@ -64,7 +75,7 @@ internal fun gyroCaptureScope(): CoroutineScope =
     CoroutineScope(SupervisorJob() + gyroCaptureDispatcher)
 
 /** App-owned sensor/file adapter; all take boundaries and health rules are Swift-owned. */
-internal class GyroCaptureCoordinator(context: Context, private val native: GyroNative = SwiftGyroNative,
+internal class GyroCaptureCoordinator(private val context: Context, private val native: GyroNative = SwiftGyroNative,
     private val calibrationNative: GyroCalibrationNative = SwiftGyroCalibrationNative) {
     private val scope = gyroCaptureScope()
     private val preferences = context.getSharedPreferences("gyro-logging", Context.MODE_PRIVATE)
@@ -107,7 +118,8 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
         scope.launch {
             val available = sensor != null && SwiftCore.isAvailable
             mutableState.value = mutableState.value.copy(available = available,
-                status = if (available) "Off" else "Gyroscope unavailable on this device.")
+                status = context.getString(if (available) R.string.gyro_status_off else R.string.gyro_status_unavailable),
+                statusKind = if (available) GyroStatusKind.OFF else GyroStatusKind.UNAVAILABLE)
             if (SwiftCore.isAvailable) {
                 runCatching {
                     val catalog = decodeGyroMountPresets(native.mountPresets(true))
@@ -124,12 +136,15 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
                         mountPreset = selectedMount.preset, mountCalibration = savedCalibration)
                 }.onFailure {
                     mutableState.value = mutableState.value.copy(available = false)
-                    fail(it.message ?: "Could not read gyro mount presets.")
+                    fail(it.message ?: context.getString(R.string.gyro_error_mount_presets))
                 }
                 runCatching { store.recover() }.onFailure {
-                    mutableState.value = mutableState.value.copy(storageWarning = it.message ?: "Some gyro logs could not be recovered.")
+                    mutableState.value = mutableState.value.copy(
+                        storageWarning = it.message ?: context.getString(R.string.gyro_error_recovery))
                 }
-                runCatching { refreshLogs() }.onFailure { fail(it.message ?: "Could not read gyro logs.") }
+                runCatching { refreshLogs() }.onFailure {
+                    fail(it.message ?: context.getString(R.string.gyro_error_logs_read))
+                }
             }
         }
     }
@@ -204,7 +219,7 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
 
     fun delete(entry: GyroLogEntry) { scope.launch {
         runCatching { store.delete(entry); refreshLogs() }
-            .onFailure { fail(it.message ?: "Could not delete gyro log.") }
+            .onFailure { fail(it.message ?: context.getString(R.string.gyro_error_log_delete)) }
     } }
 
     fun close() { scope.launch {
@@ -216,14 +231,14 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
         cancelCalibration()
         if (!calibrationEligible()) {
             mutableState.value = mutableState.value.copy(calibration = GyroCalibrationState(
-                error = "Connect the camera's live view and stop recording before calibrating."))
+                error = context.getString(R.string.gyro_error_calibration_live)))
             return@launch
         }
         val gravity = sensorManager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
         val tiltSensor = gravity ?: sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         if (tiltSensor == null) {
             mutableState.value = mutableState.value.copy(calibration = GyroCalibrationState(
-                error = "Phone gravity is unavailable on this device."))
+                error = context.getString(R.string.gyro_error_gravity_unavailable)))
             return@launch
         }
         try {
@@ -321,7 +336,7 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
 
     private fun failCalibration(error: Exception) {
         stopCalibrationResources()
-        calibration.cancel(error.message ?: "Could not calibrate the phone mount.")
+        calibration.cancel(error.message ?: context.getString(R.string.gyro_error_calibration))
         mutableState.value = mutableState.value.copy(calibration = calibration.state)
     }
 
@@ -331,16 +346,26 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
             gyroSelectorArms(session?.cameraProperties?.value?.captureSelector)
         if (!eligible) {
             stop(reason)
-            mutableState.value = mutableState.value.copy(status = when {
-                !mutableState.value.available -> "Gyroscope unavailable on this device."
-                !mutableState.value.enabled -> "Off"
-                else -> "Waiting for camera"
-            })
+            val kind = when {
+                !mutableState.value.available -> GyroStatusKind.UNAVAILABLE
+                !mutableState.value.enabled -> GyroStatusKind.OFF
+                else -> GyroStatusKind.WAITING_FOR_CAMERA
+            }
+            mutableState.value = mutableState.value.copy(
+                status = context.getString(
+                    when (kind) {
+                        GyroStatusKind.UNAVAILABLE -> R.string.gyro_status_unavailable
+                        GyroStatusKind.OFF -> R.string.gyro_status_off
+                        else -> R.string.gyro_status_waiting
+                    },
+                ),
+                statusKind = kind,
+            )
             return
         }
         if (owner != null || mutableState.value.failed) return
         if (sensor == null || !SwiftCore.isAvailable || mutableState.value.mountOptions.isEmpty()) {
-            fail("Gyroscope unavailable on this device."); return
+            fail(context.getString(R.string.gyro_status_unavailable)); return
         }
         try {
             owner = native.create()
@@ -356,7 +381,10 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
             if (sensorManager?.registerListener(activeListener, sensor, 10_000, Handler(thread.looper)) != true) {
                 throw IllegalStateException("Could not start the gyroscope.")
             }
-            mutableState.value = mutableState.value.copy(status = "Starting gyroscope", logging = false)
+            mutableState.value = mutableState.value.copy(
+                status = context.getString(R.string.gyro_status_starting),
+                statusKind = GyroStatusKind.STARTING, logging = false,
+            )
             apply(native.poll(owner ?: return, now()))
             session?.reportedRecording?.value?.let { observe(it) }
             tick = scope.launch { while (owner != null) { delay(100); drainAndPoll() } }
@@ -397,9 +425,16 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
         if (owner == null) return
         try {
             val overflow = synchronized(pending) { overflowed }
-            if (overflow) { stop("bufferOverflow"); fail("Gyro capture overflowed; the log is incomplete."); return }
+            if (overflow) {
+                stop("bufferOverflow")
+                fail(context.getString(R.string.gyro_error_overflow))
+                return
+            }
             drain(); owner?.let { apply(native.poll(it, now())) }; store.flush(SystemClock.elapsedRealtime())
-            if (stalled) { stop("sensorStalled"); fail("The gyroscope stalled; the log is incomplete.") }
+            if (stalled) {
+                stop("sensorStalled")
+                fail(context.getString(R.string.gyro_error_stalled))
+            }
         } catch (error: Exception) { failCapture(error) }
     }
 
@@ -443,11 +478,23 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
         val logging = reply.getBoolean("active")
         val warning = reply.getBoolean("gapWarning")
         if (reply.optString("termination") == "sensorStalled") stalled = true
+        val statusKind = when {
+            warning -> GyroStatusKind.SAMPLE_GAPS
+            logging -> if (lastReported == false) GyroStatusKind.SAVING else GyroStatusKind.LOGGING
+            reply.getBoolean("hasSamples") -> GyroStatusKind.READY
+            else -> GyroStatusKind.STARTING
+        }
         mutableState.value = mutableState.value.copy(logging = logging,
-            status = if (warning) "Gyro sample gaps" else if (logging) {
-                if (lastReported == false) "Saving" else "Logging"
-            }
-                else if (reply.getBoolean("hasSamples")) "Ready" else "Starting gyroscope",
+            status = context.getString(
+                when (statusKind) {
+                    GyroStatusKind.SAMPLE_GAPS -> R.string.gyro_status_gaps
+                    GyroStatusKind.SAVING -> R.string.gyro_status_saving
+                    GyroStatusKind.LOGGING -> R.string.gyro_status_logging
+                    GyroStatusKind.READY -> R.string.gyro_status_ready
+                    else -> R.string.gyro_status_starting
+                },
+            ),
+            statusKind = statusKind,
             failed = warning)
         if (changed) refreshLogs()
     }
@@ -479,10 +526,11 @@ internal class GyroCaptureCoordinator(context: Context, private val native: Gyro
         // The core may have accepted more rows than the failed write persisted. Recover the
         // valid file prefix instead of publishing the core's in-memory completion counters.
         runCatching { store.abort() }.onFailure {
-            mutableState.value = mutableState.value.copy(storageWarning = it.message ?: "Some gyro logs could not be recovered.")
+            mutableState.value = mutableState.value.copy(
+                storageWarning = it.message ?: context.getString(R.string.gyro_error_recovery))
         }
         runCatching { refreshLogs() }
-        fail(error.message ?: "Gyro capture failed; available samples were retained.")
+        fail(error.message ?: context.getString(R.string.gyro_error_capture))
     }
 
     private fun fail(message: String) { mutableState.value = mutableState.value.copy(status = message, failed = true, logging = false) }

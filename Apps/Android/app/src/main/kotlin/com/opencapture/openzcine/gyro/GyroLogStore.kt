@@ -1,5 +1,7 @@
 package com.opencapture.openzcine.gyro
 
+import android.content.Context
+import com.opencapture.openzcine.R
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -13,18 +15,23 @@ internal data class GyroLogEntry(val descriptor: JSONObject, val summary: JSONOb
     val id: String get() = descriptor.getString("id")
     val cameraLabel: String get() = descriptor.getString("cameraLabel")
     val mountPreset: String get() = descriptor.optString("mountPreset", "unconfigured")
-    fun mountDetail(catalog: Map<String, GyroMountOption>): String =
-        if (descriptor.optJSONObject("mountCalibration") != null) "Calibrated phone mount"
-        else (catalog[mountPreset] ?: catalog["unconfigured"])?.detail ?: "Unconfigured · set alignment in Gyroflow"
+    fun mountDetail(catalog: Map<String, GyroMountOption>, context: Context? = null): String =
+        if (descriptor.optJSONObject("mountCalibration") != null) {
+            context?.getString(R.string.gyro_mount_calibrated) ?: "Calibrated phone mount"
+        } else {
+            (catalog[mountPreset] ?: catalog["unconfigured"])?.detail
+                ?: context?.getString(R.string.gyro_mount_unconfigured) ?: "Unconfigured · set alignment in Gyroflow"
+        }
     val startDateMillis: Long get() = descriptor.getDouble("startDate").toLong()
     val canShare: Boolean get() = summary != null && !active
-    val health: String get() = when {
-        active -> "Recording / post-roll"
-        summary == null -> "Incomplete file"
-        summary.getString("termination") == "recovered" -> "Recovered · partial"
-        summary.getString("termination") != "normal" -> "Interrupted · partial"
-        summary.getBoolean("isPartial") -> "Partial"
-        else -> "Complete"
+    val health: String get() = healthLabel(null)
+    fun healthLabel(context: Context?): String = when {
+        active -> context?.getString(R.string.gyro_health_recording) ?: "Recording / post-roll"
+        summary == null -> context?.getString(R.string.gyro_health_incomplete) ?: "Incomplete file"
+        summary.getString("termination") == "recovered" -> context?.getString(R.string.gyro_health_recovered) ?: "Recovered · partial"
+        summary.getString("termination") != "normal" -> context?.getString(R.string.gyro_health_interrupted) ?: "Interrupted · partial"
+        summary.getBoolean("isPartial") -> context?.getString(R.string.gyro_health_partial) ?: "Partial"
+        else -> context?.getString(R.string.gyro_health_complete) ?: "Complete"
     }
 }
 

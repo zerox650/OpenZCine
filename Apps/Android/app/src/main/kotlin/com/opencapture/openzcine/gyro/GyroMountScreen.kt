@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ import com.opencapture.monitorui.MonitorTypography
 import com.opencapture.monitorui.monitorScrollFade
 import com.opencapture.monitorui.settings.MonitorSettingsActionPill
 import com.opencapture.monitorui.settings.MonitorSettingsRowCard
+import com.opencapture.openzcine.R
 
 /** Saves the phone's physical mount for future takes; screen rotation has no effect. */
 @Composable
@@ -45,51 +47,50 @@ internal fun GyroMountScreen(state: GyroCaptureState, onSelect: (String) -> Unit
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
-            Text("Phone mount", style = MonitorTypography.text(17f, FontWeight.SemiBold), color = MonitorPalette.text)
-            MonitorSettingsActionPill("Close", onClick = onClose)
+            Text(stringResource(R.string.gyro_mount_title), style = MonitorTypography.text(17f, FontWeight.SemiBold), color = MonitorPalette.text)
+            MonitorSettingsActionPill(stringResource(R.string.action_close), onClick = onClose)
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth().monitorScrollFade(scroll), state = scroll,
             contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (state.calibration.active) {
                 item {
                     MonitorSettingsRowCard {
-                        Text("Step ${state.calibration.poseCount + 1} of 3",
+                        Text(stringResource(R.string.gyro_mount_step, state.calibration.poseCount + 1),
                             style = MonitorTypography.text(13f, FontWeight.SemiBold), color = MonitorPalette.text)
-                        Text(when (state.calibration.poseCount) {
-                            0 -> "Hold the camera level and keep the phone firmly mounted. Hold still for two seconds, then capture."
-                            1 -> "Tilt the lens up 25–35° and keep the camera's roll level. Hold still for two seconds, then capture."
-                            else -> "Point the lens up 35–45° and lean the camera's top 40–45° left or right. Hold still for two seconds, then verify."
-                        }, style = MonitorTypography.text(12f), color = MonitorPalette.muted)
+                        Text(stringResource(when (state.calibration.poseCount) {
+                            0 -> R.string.gyro_mount_pose_level
+                            1 -> R.string.gyro_mount_pose_tilt
+                            else -> R.string.gyro_mount_pose_point
+                        }), style = MonitorTypography.text(12f), color = MonitorPalette.muted)
                         state.calibration.error?.let { Text(it, style = MonitorTypography.text(12f), color = MonitorPalette.accent) }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             onCapture?.let { MonitorSettingsActionPill(
-                                if (state.calibration.poseCount == 2) "Verify" else "Capture", onClick = it) }
-                            onCalibrate?.let { MonitorSettingsActionPill("Restart", onClick = it) }
-                            onCancelCalibration?.let { MonitorSettingsActionPill("Cancel", onClick = it) }
+                                stringResource(if (state.calibration.poseCount == 2) R.string.gyro_mount_verify else R.string.gyro_mount_capture), onClick = it) }
+                            onCalibrate?.let { MonitorSettingsActionPill(stringResource(R.string.gyro_mount_restart), onClick = it) }
+                            onCancelCalibration?.let { MonitorSettingsActionPill(stringResource(R.string.action_cancel), onClick = it) }
                         }
                     }
                 }
             } else {
                 if (onCalibrate != null) item {
                     MonitorSettingsRowCard {
-                        Text(if (state.mountCalibration != null) "Calibrated phone mount" else "Automatic calibration",
+                        Text(stringResource(if (state.mountCalibration != null) R.string.gyro_mount_calibrated else R.string.gyro_mount_auto),
                             style = MonitorTypography.text(13f, FontWeight.SemiBold), color = MonitorPalette.text)
-                        Text("Keep the phone firmly mounted. Capture three still camera positions to align it automatically.",
+                        Text(stringResource(R.string.gyro_mount_auto_help),
                             style = MonitorTypography.text(12f), color = MonitorPalette.muted)
                         state.calibration.error?.let { Text(it, style = MonitorTypography.text(12f), color = MonitorPalette.accent) }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MonitorSettingsActionPill("Calibrate", onClick = onCalibrate)
+                            MonitorSettingsActionPill(stringResource(R.string.gyro_mount_calibrate), onClick = onCalibrate)
                             if (state.mountCalibration != null) onResetCalibration?.let {
-                                MonitorSettingsActionPill("Reset", onClick = it)
+                                MonitorSettingsActionPill(stringResource(R.string.action_reset), onClick = it)
                             }
                         }
                     }
                 }
                 item {
-                    Text(if (state.mountOptions.size == 1) "Calibrate the mount or set the phone-to-camera alignment in Gyroflow."
-                        else "Manual presets: directions are viewed from behind an upright camera. Keep the phone screen parallel to the camera's back, perpendicular to the lens axis. For an angled holder, calibrate the mount.",
+                    Text(stringResource(if (state.mountOptions.size == 1) R.string.gyro_mount_single_hint else R.string.gyro_mount_manual_hint),
                         style = MonitorTypography.text(12f), color = MonitorPalette.muted)
                 }
                 for ((group, options) in state.mountOptions.groupBy { it.group }) {
@@ -114,7 +115,7 @@ internal fun GyroMountScreen(state: GyroCaptureState, onSelect: (String) -> Unit
                 }
             }
             item {
-                Text("Changes apply to the next take. Existing logs keep their recorded mount.",
+                Text(stringResource(R.string.gyro_mount_changes_note),
                     style = MonitorTypography.text(12f), color = MonitorPalette.muted)
             }
         }
