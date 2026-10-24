@@ -2,6 +2,7 @@ package com.opencapture.openzcine.gyro
 
 import android.content.Context
 import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -37,11 +38,12 @@ internal data class GyroLogEntry(val descriptor: JSONObject, val summary: JSONOb
 
 /** Native files only: take boundaries, GCSV encoding and recovery validation stay in Swift. */
 internal class GyroLogStore(private val root: File, private val native: GyroNative,
+    private val context: Context? = null,
     private val writeBytes: (RandomAccessFile, ByteArray) -> Unit = { file, bytes -> file.write(bytes) }) {
     private val writers = mutableMapOf<String, RandomAccessFile>()
     private var lastFlush = 0L
 
-    init { if (!root.exists() && !root.mkdirs()) throw IOException("Could not create gyro storage.") }
+    init { if (!root.exists() && !root.mkdirs()) throw IOException(lstr(context, R.string.gyro_storage_create_failed)) }
 
     fun apply(reply: JSONObject) {
         val updates = reply.getJSONArray("updates")
@@ -55,7 +57,7 @@ internal class GyroLogStore(private val root: File, private val native: GyroNati
                     writers[id] = RandomAccessFile(File(root, "$id.partial"), "rw")
                 }
                 "appended" -> {
-                    val writer = writers[id] ?: throw IOException("Gyro log is not open.")
+                    val writer = writers[id] ?: throw IOException(lstr(context, R.string.gyro_log_not_open))
                     writeBytes(writer, Base64.getDecoder().decode(update.getString("data")))
                 }
                 "finished" -> finish(id, update.getJSONObject("summary"))
@@ -82,11 +84,11 @@ internal class GyroLogStore(private val root: File, private val native: GyroNati
     private fun readEntry(file: File): GyroLogEntry? {
         val descriptor = JSONObject(file.readText())
         val id = UUID.fromString(descriptor.getString("id")).toString().uppercase()
-        require(file.name == "$id.json") { "Invalid gyro descriptor." }
+        require(file.name == "$id.json") { lstr(context, R.string.gyro_descriptor_invalid) }
         descriptor.getString("cameraLabel")
         descriptor.getDouble("startDate")
         val filename = descriptor.getString("filename")
-        require(File(filename).name == filename) { "Invalid gyro filename." }
+        require(File(filename).name == filename) { lstr(context, R.string.gyro_filename_invalid) }
         val partial = File(root, "$id.partial")
         val artifact = if (partial.isFile) partial else File(root, filename)
         if (!artifact.isFile) return null
@@ -102,8 +104,8 @@ internal class GyroLogStore(private val root: File, private val native: GyroNati
     }
 
     fun delete(entry: GyroLogEntry) {
-        check(!writers.containsKey(entry.id)) { "A recording gyro log cannot be deleted." }
-        if (!entry.file.delete()) throw IOException("Could not delete the gyro log.")
+        check(!writers.containsKey(entry.id)) { lstr(context, R.string.gyro_delete_active) }
+        if (!entry.file.delete()) throw IOException(lstr(context, R.string.gyro_delete_failed))
         File(root, "${entry.id}.summary.json").delete()
         File(root, "${entry.id}.json").delete()
     }
@@ -113,7 +115,7 @@ internal class GyroLogStore(private val root: File, private val native: GyroNati
         for (file in root.listFiles().orEmpty().filter { it.name.endsWith(".partial") }) {
             try { recoverFile(file) } catch (_: Exception) { failures += 1 }
         }
-        if (failures > 0) throw IOException("Some interrupted gyro logs could not be recovered. Saved logs remain available.")
+        if (failures > 0) throw IOException(lstr(context, R.string.gyro_recovery_partial))
     }
 
     /** Rebuilds completion metadata from bytes actually written after an append failure. */
@@ -132,11 +134,11 @@ internal class GyroLogStore(private val root: File, private val native: GyroNati
                         val count = input.read(buffer)
                         if (count < 0) break
                         validLength = native.recoveryAccept(owner, buffer.copyOf(count))
-                        if (validLength < 0) throw IOException("The partial gyro log has an invalid header.")
+                        if (validLength < 0) throw IOException(lstr(context, R.string.gyro_recovery_invalid_header))
                     }
                 }
             } finally { summary = native.recoveryFinish(owner, descriptor) }
-            val recovered = summary ?: throw IOException("The partial gyro log could not be recovered.")
+            val recovered = summary ?: throw IOException(lstr(context, R.string.gyro_recovery_failed))
             RandomAccessFile(file, "rw").use { it.setLength(validLength); it.fd.sync() }
             finish(id, JSONObject(recovered))
     }
@@ -144,16 +146,16 @@ internal class GyroLogStore(private val root: File, private val native: GyroNati
     private fun finish(id: String, summary: JSONObject) {
         writers.remove(id)?.let { writer -> try { writer.fd.sync() } finally { writer.close() } }
         val filename = summary.getJSONObject("descriptor").getString("filename")
-        require(File(filename).name == filename) { "Invalid gyro filename." }
+        require(File(filename).name == filename) { lstr(context, R.string.gyro_filename_invalid) }
         val partial = File(root, "$id.partial")
         val destination = File(root, filename)
         atomicWrite(File(root, "$id.summary.json"), summary.toString())
-        if (!partial.renameTo(destination)) throw IOException("Could not finish the gyro log.")
+        if (!partial.renameTo(destination)) throw IOException(lstr(context, R.string.gyro_finish_failed))
     }
 
     private fun atomicWrite(destination: File, value: String) {
         val temporary = File(root, "${destination.name}.tmp")
         temporary.outputStream().use { output -> output.write(value.toByteArray()); output.fd.sync() }
-        if (!temporary.renameTo(destination)) throw IOException("Could not save gyro metadata.")
+        if (!temporary.renameTo(destination)) throw IOException(lstr(context, R.string.gyro_metadata_save_failed))
     }
 }

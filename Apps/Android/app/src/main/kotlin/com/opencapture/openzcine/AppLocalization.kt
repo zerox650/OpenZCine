@@ -185,6 +185,17 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.frameio_export_codec_stalled to "OpenZCine stopped the LUT export because this device\'s media encoder stopped making progress.",
     R.string.frameio_export_cleanup_incomplete to "OpenZCine couldn\'t remove the incomplete Frame.io export.",
     R.string.frameio_export_cleanup_temporary to "OpenZCine couldn\'t remove the temporary Frame.io export.",
+    R.string.gyro_storage_create_failed to "Could not create gyro storage.",
+    R.string.gyro_log_not_open to "Gyro log is not open.",
+    R.string.gyro_descriptor_invalid to "Invalid gyro descriptor.",
+    R.string.gyro_filename_invalid to "Invalid gyro filename.",
+    R.string.gyro_delete_active to "A recording gyro log cannot be deleted.",
+    R.string.gyro_delete_failed to "Could not delete the gyro log.",
+    R.string.gyro_recovery_partial to "Some interrupted gyro logs could not be recovered. Saved logs remain available.",
+    R.string.gyro_recovery_invalid_header to "The partial gyro log has an invalid header.",
+    R.string.gyro_recovery_failed to "The partial gyro log could not be recovered.",
+    R.string.gyro_finish_failed to "Could not finish the gyro log.",
+    R.string.gyro_metadata_save_failed to "Could not save gyro metadata.",
 )
 
 /**

@@ -1171,4 +1171,15 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="frameio_export_codec_stalled">由于本设备的媒体编码器停止推进，OpenZCine 已中止 LUT 导出。</string>
     <string name="frameio_export_cleanup_incomplete">OpenZCine 无法移除未完成的 Frame.io 导出文件。</string>
     <string name="frameio_export_cleanup_temporary">OpenZCine 无法移除临时的 Frame.io 导出文件。</string>
+    <string name="gyro_storage_create_failed">无法创建陀螺仪日志存储空间。</string>
+    <string name="gyro_log_not_open">陀螺仪日志未打开。</string>
+    <string name="gyro_descriptor_invalid">陀螺仪日志描述符无效。</string>
+    <string name="gyro_filename_invalid">陀螺仪日志文件名无效。</string>
+    <string name="gyro_delete_active">正在录制的陀螺仪日志无法删除。</string>
+    <string name="gyro_delete_failed">无法删除该陀螺仪日志。</string>
+    <string name="gyro_recovery_partial">部分中断的陀螺仪日志无法恢复。已保存的日志仍可访问。</string>
+    <string name="gyro_recovery_invalid_header">该不完整的陀螺仪日志文件头无效。</string>
+    <string name="gyro_recovery_failed">该不完整的陀螺仪日志无法恢复。</string>
+    <string name="gyro_finish_failed">无法完成该陀螺仪日志。</string>
+    <string name="gyro_metadata_save_failed">无法保存陀螺仪日志元数据。</string>
 </resources>

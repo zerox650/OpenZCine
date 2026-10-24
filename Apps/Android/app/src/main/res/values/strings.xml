@@ -1171,4 +1171,15 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="frameio_export_codec_stalled">OpenZCine stopped the LUT export because this device\'s media encoder stopped making progress.</string>
     <string name="frameio_export_cleanup_incomplete">OpenZCine couldn\'t remove the incomplete Frame.io export.</string>
     <string name="frameio_export_cleanup_temporary">OpenZCine couldn\'t remove the temporary Frame.io export.</string>
+    <string name="gyro_storage_create_failed">Could not create gyro storage.</string>
+    <string name="gyro_log_not_open">Gyro log is not open.</string>
+    <string name="gyro_descriptor_invalid">Invalid gyro descriptor.</string>
+    <string name="gyro_filename_invalid">Invalid gyro filename.</string>
+    <string name="gyro_delete_active">A recording gyro log cannot be deleted.</string>
+    <string name="gyro_delete_failed">Could not delete the gyro log.</string>
+    <string name="gyro_recovery_partial">Some interrupted gyro logs could not be recovered. Saved logs remain available.</string>
+    <string name="gyro_recovery_invalid_header">The partial gyro log has an invalid header.</string>
+    <string name="gyro_recovery_failed">The partial gyro log could not be recovered.</string>
+    <string name="gyro_finish_failed">Could not finish the gyro log.</string>
+    <string name="gyro_metadata_save_failed">Could not save gyro metadata.</string>
 </resources>

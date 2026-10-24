@@ -83,7 +83,7 @@ internal class GyroCaptureCoordinator(private val context: Context, private val 
     private val sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val naturalPortrait = context.getSystemService(DisplayManager::class.java)
         ?.getDisplay(Display.DEFAULT_DISPLAY)?.mode?.let { it.physicalWidth < it.physicalHeight } == true
-    private val store by lazy { GyroLogStore(File(context.filesDir, "gyro-logs"), native) }
+    private val store by lazy { GyroLogStore(File(context.filesDir, "gyro-logs"), native, context = context) }
     private val mutableState = MutableStateFlow(GyroCaptureState(enabled = preferences.getBoolean("enabled", false)))
     val state: StateFlow<GyroCaptureState> = mutableState
     private var session: CameraSession? = null
