@@ -1,9 +1,12 @@
 package com.opencapture.openzcine.media
 
+import android.content.Context
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.provider.MediaStore
 import com.opencapture.opencine.appkit.MediaStoreInsertPolicy
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import java.io.FilterOutputStream
 import java.io.IOException
 import java.io.OutputStream
@@ -243,44 +246,62 @@ internal data class MediaGalleryBatchResult(
         get() = failures.size
 
     /** Concise, truthful result text shared by browser and playback. */
-    fun operatorMessage(omissions: MediaGalleryOmissions = MediaGalleryOmissions()): String {
+    fun operatorMessage(
+        omissions: MediaGalleryOmissions = MediaGalleryOmissions(),
+        context: Context? = null,
+    ): String {
         val parts = mutableListOf<String>()
         when {
-            savedCount > 0 -> parts += "Saved $savedCount ${noun(savedCount, "clip", "clips")} to Gallery"
+            savedCount > 0 -> parts += galleryQuantity(context, savedCount,
+                R.string.gallery_saved_one, R.string.gallery_saved_other, savedCount)
             failedCount > 0 -> parts += failures.first().operatorMessage
-            else -> parts += "No videos were saved to Gallery"
+            else -> parts += lstr(context, R.string.gallery_saved_none)
         }
         if (savedCount > 0 && failedCount > 0) {
-            parts += "$failedCount ${noun(failedCount, "clip", "clips")} couldn't be saved"
+            parts += galleryQuantity(context, failedCount,
+                R.string.gallery_failed_save_one, R.string.gallery_failed_save_other, failedCount)
         } else if (savedCount == 0 && failedCount > 1) {
-            parts += "${failedCount - 1} more ${noun(failedCount - 1, "clip", "clips")} failed"
+            parts += galleryQuantity(context, failedCount - 1,
+                R.string.gallery_failed_more_one, R.string.gallery_failed_more_other, failedCount - 1)
         }
         if (omissions.nonVideoCount > 0) {
-            parts +=
-                "${omissions.nonVideoCount} non-video " +
-                    "${noun(omissions.nonVideoCount, "item", "items")} skipped"
+            parts += galleryQuantity(context, omissions.nonVideoCount,
+                R.string.gallery_skipped_nonvideo_one, R.string.gallery_skipped_nonvideo_other,
+                omissions.nonVideoCount)
         }
         if (omissions.incompleteCount > 0) {
-            parts +=
-                "${omissions.incompleteCount} incomplete " +
-                    "${noun(omissions.incompleteCount, "item wasn't", "items weren't")} ready"
+            parts += galleryQuantity(context, omissions.incompleteCount,
+                R.string.gallery_incomplete_one, R.string.gallery_incomplete_other,
+                omissions.incompleteCount)
         }
         if (omissions.preparationFailureCount > 0) {
-            parts +=
-                "${omissions.preparationFailureCount} " +
-                    "${noun(omissions.preparationFailureCount, "item", "items")} couldn't be prepared"
+            parts += galleryQuantity(context, omissions.preparationFailureCount,
+                R.string.gallery_prepare_failed_one, R.string.gallery_prepare_failed_other,
+                omissions.preparationFailureCount)
         }
         if (omissions.temporaryCleanupFailureCount > 0) {
-            parts +=
-                "${omissions.temporaryCleanupFailureCount} temporary " +
-                    "${noun(omissions.temporaryCleanupFailureCount, "export wasn't", "exports weren't")} removed"
+            parts += galleryQuantity(context, omissions.temporaryCleanupFailureCount,
+                R.string.gallery_export_removed_one, R.string.gallery_export_removed_other,
+                omissions.temporaryCleanupFailureCount)
         }
-        return parts.joinToString(separator = "; ", postfix = ".")
+        return parts.joinToString(
+            separator = lstr(context, R.string.gallery_message_separator),
+            postfix = lstr(context, R.string.gallery_message_period),
+        )
     }
-
-    private fun noun(count: Int, singular: String, plural: String): String =
-        if (count == 1) singular else plural
 }
+
+/**
+ * English inflects the noun by count; the other locales read one form for every count. Keeps the
+ * count==1 selection in one place so a new fragment cannot re-derive it.
+ */
+private fun galleryQuantity(
+    context: Context?,
+    count: Int,
+    oneRes: Int,
+    otherRes: Int,
+    vararg args: Any?,
+): String = lstr(context, if (count == 1) oneRes else otherRes, *args)
 
 /**
  * Sequentially copies complete prepared media into scoped MediaStore rows.
@@ -292,13 +313,14 @@ internal data class MediaGalleryBatchResult(
 internal class MediaGallerySaver(private val gateway: MediaGalleryGateway) {
     fun save(
         artifacts: List<MediaGalleryArtifact>,
+        context: Context? = null,
         cancellationCheck: () -> Unit = {},
     ): MediaGalleryBatchResult {
         var saved = 0
         val failures = mutableListOf<MediaGalleryFailure>()
         artifacts.forEach { artifact ->
             cancellationCheck()
-            val failure = saveOne(artifact, cancellationCheck)
+            val failure = saveOne(artifact, context, cancellationCheck)
             if (failure == null) saved += 1 else failures += failure
         }
         return MediaGalleryBatchResult(savedCount = saved, failures = failures)
@@ -306,6 +328,7 @@ internal class MediaGallerySaver(private val gateway: MediaGalleryGateway) {
 
     internal fun saveOne(
         artifact: MediaGalleryArtifact,
+        context: Context? = null,
         cancellationCheck: () -> Unit,
     ): MediaGalleryFailure? {
         var phase = SavePhase.VALIDATE
@@ -330,7 +353,7 @@ internal class MediaGallerySaver(private val gateway: MediaGalleryGateway) {
             throw cancelled
         } catch (error: Exception) {
             val cleanupFailure = pending?.let(::cleanupFailure)
-            return classifyFailure(artifact.displayName, phase, error, cleanupFailure)
+            return classifyFailure(artifact.displayName, phase, error, cleanupFailure, context)
         }
     }
 
@@ -403,22 +426,20 @@ internal class MediaGallerySaver(private val gateway: MediaGalleryGateway) {
         phase: SavePhase,
         error: Exception,
         cleanupFailure: Exception?,
+        context: Context? = null,
     ): MediaGalleryFailure {
         if (cleanupFailure != null) {
             return MediaGalleryFailure(
                 displayName = displayName,
                 kind = MediaGalleryFailureKind.CLEANUP_FAILED,
-                operatorMessage =
-                    "Android couldn't clean up an incomplete Gallery item for $displayName. " +
-                        "Restart the app before retrying.",
+                operatorMessage = lstr(context, R.string.gallery_fail_cleanup, displayName),
             )
         }
         if (error is SecurityException) {
             return MediaGalleryFailure(
                 displayName = displayName,
                 kind = MediaGalleryFailureKind.PERMISSION_DENIED,
-                operatorMessage =
-                    "Gallery access was denied for $displayName. Check Android storage access and try again.",
+                operatorMessage = lstr(context, R.string.gallery_fail_permission, displayName),
             )
         }
         val kind =
@@ -433,16 +454,16 @@ internal class MediaGallerySaver(private val gateway: MediaGalleryGateway) {
         val message =
             when (kind) {
                 MediaGalleryFailureKind.SOURCE_UNAVAILABLE ->
-                    "$displayName is no longer a complete readable video. Cache it again and retry."
+                    lstr(context, R.string.gallery_fail_source, displayName)
                 MediaGalleryFailureKind.STORAGE_UNAVAILABLE ->
-                    "Android couldn't create a Gallery item for $displayName. Check available device storage."
+                    lstr(context, R.string.gallery_fail_storage, displayName)
                 MediaGalleryFailureKind.WRITE_FAILED ->
-                    "Android couldn't finish writing $displayName to Gallery. Check available device storage."
+                    lstr(context, R.string.gallery_fail_write, displayName)
                 MediaGalleryFailureKind.PUBLISH_FAILED ->
-                    "Android couldn't publish $displayName to Gallery. The incomplete item was removed."
+                    lstr(context, R.string.gallery_fail_publish, displayName)
                 MediaGalleryFailureKind.PERMISSION_DENIED,
                 MediaGalleryFailureKind.CLEANUP_FAILED,
-                -> error.message ?: "Gallery delivery failed for $displayName."
+                -> lstr(context, R.string.gallery_fail_generic, displayName)
             }
         return MediaGalleryFailure(displayName, kind, message)
     }

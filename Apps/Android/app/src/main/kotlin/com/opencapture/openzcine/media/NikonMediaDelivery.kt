@@ -61,7 +61,10 @@ internal class NikonMediaDelivery(
         if (!item.share.mimeType.startsWith("video/") && !item.share.mimeType.startsWith("image/")) false
         else withContext(Dispatchers.IO) {
             val entered = currentCoroutineContext()
-            gallery.saveOne(MediaGalleryArtifact.fromStagedShare(item.share, item.captureTimestampMillis)) { entered.ensureActive() } == null
+            gallery.saveOne(
+                MediaGalleryArtifact.fromStagedShare(item.share, item.captureTimestampMillis),
+                appContext,
+            ) { entered.ensureActive() } == null
         }
     }
 
