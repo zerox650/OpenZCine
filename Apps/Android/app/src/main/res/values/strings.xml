@@ -1185,4 +1185,23 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="gyro_gravity_start_failed">Could not start phone gravity.</string>
     <string name="gyro_sensor_start_failed">Could not start the gyroscope.</string>
     <string name="gyro_core_rejected">Gyro core did not accept the operation.</string>
+    <string name="recording_error_not_connected">Connect to a camera before changing recording.</string>
+    <string name="recording_error_core_unavailable">The shared camera core is unavailable in this app build.</string>
+    <string name="recording_error_media_busy">Close camera media before changing recording.</string>
+    <string name="recording_error_command_rejected">The camera rejected the recording command.</string>
+    <string name="recording_error_unsupported">This camera connection cannot control recording.</string>
+    <string name="recording_error_transport_failed">The camera connection failed while changing recording.</string>
+    <string name="control_error_not_connected">Connect to a camera before changing a camera control.</string>
+    <string name="control_error_core_unavailable">The shared camera core is unavailable in this app build.</string>
+    <string name="control_error_media_busy">Close camera media before changing a camera control.</string>
+    <string name="control_error_unsupported">This camera control or value is not supported.</string>
+    <string name="control_error_command_rejected">The camera rejected the control change.</string>
+    <string name="control_error_readback_mismatch">The camera did not keep that control value. Check its recording mode and try again.</string>
+    <string name="control_error_transport_failed">The camera connection failed while changing a control.</string>
+    <string name="focus_error_not_connected">Connect to a camera before changing the focus point.</string>
+    <string name="focus_error_core_unavailable">The shared camera core is unavailable in this app build.</string>
+    <string name="focus_error_media_busy">Close camera media before changing the focus point.</string>
+    <string name="focus_error_unavailable">Camera focus metadata is not available yet.</string>
+    <string name="focus_error_command_rejected">The camera rejected the focus-point change.</string>
+    <string name="focus_error_transport_failed">The camera connection failed while changing the focus point.</string>
 </resources>

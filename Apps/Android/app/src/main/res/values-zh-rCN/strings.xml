@@ -1185,4 +1185,23 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="gyro_gravity_start_failed">无法启动手机的重力传感器。</string>
     <string name="gyro_sensor_start_failed">无法启动陀螺仪。</string>
     <string name="gyro_core_rejected">陀螺仪核心未接受该操作。</string>
+    <string name="recording_error_not_connected">请先连接相机再更改录制状态。</string>
+    <string name="recording_error_core_unavailable">此应用版本未包含共享相机核心组件。</string>
+    <string name="recording_error_media_busy">请先关闭相机媒体库再更改录制状态。</string>
+    <string name="recording_error_command_rejected">相机拒绝了录制指令。</string>
+    <string name="recording_error_unsupported">当前相机连接无法控制录制。</string>
+    <string name="recording_error_transport_failed">更改录制状态时相机连接失败。</string>
+    <string name="control_error_not_connected">请先连接相机再更改相机控制项。</string>
+    <string name="control_error_core_unavailable">此应用版本未包含共享相机核心组件。</string>
+    <string name="control_error_media_busy">请先关闭相机媒体库再更改相机控制项。</string>
+    <string name="control_error_unsupported">不支持该相机控制项或取值。</string>
+    <string name="control_error_command_rejected">相机拒绝了此项控制更改。</string>
+    <string name="control_error_readback_mismatch">相机未保持该控制值。请检查相机的录制模式后重试。</string>
+    <string name="control_error_transport_failed">更改控制项时相机连接失败。</string>
+    <string name="focus_error_not_connected">请先连接相机再更改对焦点。</string>
+    <string name="focus_error_core_unavailable">此应用版本未包含共享相机核心组件。</string>
+    <string name="focus_error_media_busy">请先关闭相机媒体库再更改对焦点。</string>
+    <string name="focus_error_unavailable">相机的对焦元数据尚未就绪。</string>
+    <string name="focus_error_command_rejected">相机拒绝对焦点更改。</string>
+    <string name="focus_error_transport_failed">更改对焦点时相机连接失败。</string>
 </resources>

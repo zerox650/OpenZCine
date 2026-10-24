@@ -1091,7 +1091,7 @@ internal fun MonitorScreen(
                             recordControlEnabled = recordControlEnabled,
                         )
                     } catch (error: CameraRecordingException) {
-                        error.message?.let(commonControl.onNote)
+                        commonControl.onNote(recordingFailureMessage(error, appContext))
                     }
                 }
             },
@@ -1788,8 +1788,7 @@ internal fun MonitorScreen(
                                 view.performOperatorHaptic(HapticFeedbackConstants.KEYBOARD_TAP)
                             }
                         } catch (error: CameraFocusException) {
-                            commonControl.onNote(error.message
-                                ?: appContext.getString(R.string.focus_change_rejected))
+                            commonControl.onNote(focusFailureMessage(error, appContext))
                         } finally {
                             focusMoveRequestsInFlight =
                                 (focusMoveRequestsInFlight - 1).coerceAtLeast(0)
@@ -1827,7 +1826,7 @@ internal fun MonitorScreen(
                         view.performOperatorHaptic(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
                 } catch (error: CameraFocusException) {
-                    commonControl.onNote(error.message ?: appContext.getString(R.string.focus_reset_failed))
+                    commonControl.onNote(focusFailureMessage(error, appContext))
                 } finally {
                     focusResetPending = false
                 }
@@ -2050,7 +2049,7 @@ internal fun MonitorScreen(
                     } catch (error: CameraControlException) {
                         if (admission.admits(session)) commandControlFeedback = CommandControlFeedback(
                             appContext.getString(R.string.control_error, captured.request.title,
-                                error.message ?: appContext.getString(R.string.control_change_rejected)), isError = true)
+                                controlFailureMessage(error, appContext)), isError = true)
                     }
                 }
             })
@@ -2614,3 +2613,49 @@ private fun MonitorDisplayMode.labelResource(): Int =
 
 /** The colour readout's id; it opens the CODEC picker, which carries the colour section. */
 internal const val COLOR_READOUT_ID = "COLOR"
+
+/**
+ * The operator copy for one typed recording failure. The exceptions carry English in the message
+ * (logs and off-device tests keep it), so the monitor resolves the localized line by type.
+ */
+internal fun recordingFailureMessage(error: CameraRecordingException, context: Context?): String =
+    lstr(
+        context,
+        when (error) {
+            CameraRecordingException.NotConnected -> R.string.recording_error_not_connected
+            CameraRecordingException.CoreUnavailable -> R.string.recording_error_core_unavailable
+            CameraRecordingException.MediaBusy -> R.string.recording_error_media_busy
+            CameraRecordingException.CommandRejected -> R.string.recording_error_command_rejected
+            CameraRecordingException.Unsupported -> R.string.recording_error_unsupported
+            CameraRecordingException.TransportFailed -> R.string.recording_error_transport_failed
+        },
+    )
+
+/** The operator copy for one typed control-write failure; the message stays English for logs. */
+internal fun controlFailureMessage(error: CameraControlException, context: Context?): String =
+    lstr(
+        context,
+        when (error) {
+            CameraControlException.NotConnected -> R.string.control_error_not_connected
+            CameraControlException.CoreUnavailable -> R.string.control_error_core_unavailable
+            CameraControlException.MediaBusy -> R.string.control_error_media_busy
+            CameraControlException.UnsupportedSelection -> R.string.control_error_unsupported
+            CameraControlException.CommandRejected -> R.string.control_error_command_rejected
+            CameraControlException.ReadbackMismatch -> R.string.control_error_readback_mismatch
+            CameraControlException.TransportFailed -> R.string.control_error_transport_failed
+        },
+    )
+
+/** The operator copy for one typed focus-point failure; the message stays English for logs. */
+internal fun focusFailureMessage(error: CameraFocusException, context: Context?): String =
+    lstr(
+        context,
+        when (error) {
+            CameraFocusException.NotConnected -> R.string.focus_error_not_connected
+            CameraFocusException.CoreUnavailable -> R.string.focus_error_core_unavailable
+            CameraFocusException.MediaBusy -> R.string.focus_error_media_busy
+            CameraFocusException.Unavailable -> R.string.focus_error_unavailable
+            CameraFocusException.CommandRejected -> R.string.focus_error_command_rejected
+            CameraFocusException.TransportFailed -> R.string.focus_error_transport_failed
+        },
+    )
