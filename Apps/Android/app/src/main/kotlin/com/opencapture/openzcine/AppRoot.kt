@@ -116,6 +116,7 @@ internal class AppRoot(
             lookRenderer = com.opencapture.openzcine.multicam.multicamLookRendererFactory(lutLibrary),
             operatorLook = { persistedMonitorLut(app, lutLibrary::contains) },
             lutLibrary = lutLibrary,
+            context = app,
         ).also {
             val store = com.opencapture.opencine.appkit.MultiviewStagePreferencesStore(
                 app.getSharedPreferences("multiview-presentation", Context.MODE_PRIVATE), "stage",

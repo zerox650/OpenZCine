@@ -1,6 +1,7 @@
 package com.opencapture.openzcine
 
 import android.content.Context
+import com.opencapture.openzcine.multicam.MulticamCopy
 import java.util.Locale
 
 /**
@@ -28,6 +29,31 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.rating_refusal_no_response to "Rating not saved — the camera didn't respond.",
     R.string.rating_refusal_access_denied to "Rating not saved — camera refused (Access Denied %1\$s). It may not accept ratings in this mode.",
     R.string.rating_refusal_coded to "Rating not saved — camera refused (%1\$s).",
+    R.string.multicam_session_full to MulticamCopy.SESSION_FULL,
+    R.string.multicam_already_member to MulticamCopy.ALREADY_MEMBER,
+    R.string.multicam_camera_wifi to MulticamCopy.CAMERA_WIFI,
+    R.string.multicam_not_reachable to MulticamCopy.NOT_REACHABLE,
+    R.string.multicam_empty_picker to MulticamCopy.EMPTY_PICKER,
+    R.string.multicam_couldnt_connect to MulticamCopy.COULDNT_CONNECT,
+    R.string.multicam_lost_connection to MulticamCopy.LOST_CONNECTION,
+    R.string.multicam_not_applied to "%1\$s not applied",
+    R.string.multicam_movie_mode_only to "Movie mode only.",
+    R.string.multicam_support_unknown to "Multiview support is not known for this setup.",
+    R.string.multicam_tile_connected to "Connected",
+    R.string.multicam_tile_connecting to "Connecting…",
+    R.string.multicam_tile_remove to "Remove",
+    R.string.multicam_tile_open_live_view to "Open Live View",
+    R.string.multicam_tile_remove_camera to "Remove camera",
+    R.string.multicam_settings_title to "Camera",
+    R.string.multicam_settings_close to "Close camera settings",
+    R.string.multicam_settings_picture to "%1\$s picture",
+    R.string.multicam_tab_camera to "Camera %1\$s",
+    R.string.multicam_lut_title to "LUT",
+    R.string.multicam_lut_close to "Close LUT",
+    R.string.multicam_lut_on to "On",
+    R.string.multicam_lut_off to "Off",
+    R.string.multicam_lut_selected to "Selected",
+    R.string.multicam_wb_auto to "Auto",
 )
 
 /**

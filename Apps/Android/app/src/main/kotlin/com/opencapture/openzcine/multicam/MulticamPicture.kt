@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -31,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.opencapture.openzcine.R
 import com.opencapture.monitorui.MonitorImagePreview
 import com.opencapture.monitorui.MonitorInspector
 import com.opencapture.monitorui.MonitorPalette
@@ -237,7 +239,7 @@ internal fun MulticamLookSettings(
     val picture = member?.picture
     coordinator.lutLibrary?.entries?.collectAsState()
     MonitorInspector(
-        title = "LUT",
+        title = stringResource(R.string.multicam_lut_title),
         viewportWidth = viewport.width,
         viewportHeight = viewport.height,
         onDismiss = close,
@@ -248,7 +250,7 @@ internal fun MulticamLookSettings(
         safeTrailing = viewport.safeArea.trailing,
         safeTop = viewport.safeArea.top,
         safeBottom = viewport.safeArea.bottom,
-        close = { MulticamPanelClose("Close LUT", close) },
+        close = { MulticamPanelClose(stringResource(R.string.multicam_lut_close), close) },
         compactHeader = true,
     ) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -259,16 +261,18 @@ internal fun MulticamLookSettings(
             )
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                MonitorImagePreview(member?.frame, "${member?.displayName.orEmpty()} picture",
+                MonitorImagePreview(member?.frame, stringResource(R.string.multicam_settings_picture, member?.displayName.orEmpty()),
                     Modifier.testTag("multiview.lut.preview"))
                 if (member != null && picture != null) {
                     val on = picture.lutEnabled
+                    val lutLabel = stringResource(R.string.multicam_lut_title)
+                    val onLabel = stringResource(if (on) R.string.multicam_lut_on else R.string.multicam_lut_off)
                     Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).testTag("multiview.lut.enabled")
                         .monitorChromeClickable { coordinator.setLUTEnabled(member.id, !on) }
-                        .semantics { role = Role.Switch; stateDescription = if (on) "On" else "Off"; contentDescription = "LUT" }
+                        .semantics { role = Role.Switch; stateDescription = onLabel; contentDescription = lutLabel }
                         .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("LUT", Modifier.weight(1f), style = MonitorTypography.text(13f, FontWeight.SemiBold), color = MonitorPalette.text)
-                        Text(if (on) "On" else "Off", style = MonitorTypography.text(13f, FontWeight.Medium), color = MonitorPalette.muted)
+                        Text(lutLabel, Modifier.weight(1f), style = MonitorTypography.text(13f, FontWeight.SemiBold), color = MonitorPalette.text)
+                        Text(onLabel, style = MonitorTypography.text(13f, FontWeight.Medium), color = MonitorPalette.muted)
                     }
                     multicamLookChoices(coordinator.lutLibrary).forEachIndexed { index, choice ->
                         val chosen = choice.selection == picture.selection
@@ -278,7 +282,7 @@ internal fun MulticamLookSettings(
                             .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(choice.title, Modifier.weight(1f), style = MonitorTypography.text(13f, FontWeight.Medium),
                                 color = if (chosen) MonitorPalette.text else MonitorPalette.muted)
-                            if (chosen) Text("Selected", style = MonitorTypography.text(11f, FontWeight.Medium), color = MonitorPalette.muted)
+                            if (chosen) Text(stringResource(R.string.multicam_lut_selected), style = MonitorTypography.text(11f, FontWeight.Medium), color = MonitorPalette.muted)
                         }
                     }
                 }

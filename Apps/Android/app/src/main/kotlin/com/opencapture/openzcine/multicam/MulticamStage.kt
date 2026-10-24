@@ -1,5 +1,6 @@
 package com.opencapture.openzcine.multicam
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,9 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import com.opencapture.monitorui.MonitorMaterial
 import com.opencapture.monitorui.MonitorPalette
 import com.opencapture.monitorui.MonitorTypography
@@ -77,6 +82,7 @@ fun MulticamStage(
 ) {
     var adding by remember { mutableStateOf<Int?>(null) }
     var leaving by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val fill = coordinator.presentation.fill
     val visible = LocalMultiviewStageVisible.current
     // A covered stage keeps its pictures but retires transient editors (no command is sent).
@@ -106,11 +112,11 @@ fun MulticamStage(
         MultiviewStageStateProvider(coordinator.presentation) {
         MultiviewStageServicesProvider(services) {
         MultiviewStage(
-            tiles = (0 until MulticamCoordinator.TILES).map { slot -> coordinator.memberAt(slot)?.let { tile(it, coordinator) } },
+            tiles = (0 until MulticamCoordinator.TILES).map { slot -> coordinator.memberAt(slot)?.let { tile(it, coordinator, context) } },
             layout = layout, arrangement = coordinator.arrangement, selected = coordinator.focusedSlot, fill = fill,
             tools = listOf(MultiviewTool.LAYOUT, MultiviewTool.CAMERA, MultiviewTool.FIT, MultiviewTool.LUT),
             lut = coordinator.lutOn,
-            readouts = coordinator.program?.takeIf { it.isLive }?.let { readouts(it, coordinator) },
+            readouts = coordinator.program?.takeIf { it.isLive }?.let { readouts(it, coordinator, context) },
             recording = coordinator.anyRecording, groupBusy = coordinator.groupBusy, confirmsRecord = confirmsRecord,
             actions = MultiviewStageActions(
                 select = coordinator::select,
@@ -136,8 +142,9 @@ fun MulticamStage(
                 choose = { slot, readout, choice ->
                     coordinator.memberAt(slot)?.takeIf { readout == 0 || readout == 2 }?.let { member ->
                         val key = if (readout == 0) SettingKey.ISO else SettingKey.WHITE_BALANCE
-                        choices(key, member, coordinator).firstOrNull { it.second == choice }
-                            ?.let { (value, _) -> coordinator.set(value, member.id, if (readout == 0) "ISO" else "WB") }
+                        val label = if (readout == 0) lstr(context, R.string.camera_label_iso) else lstr(context, R.string.camera_label_wb)
+                        choices(key, member, coordinator, context).firstOrNull { it.second == choice }
+                            ?.let { (value, _) -> coordinator.set(value, member.id, label) }
                     }
                 },
                 toggleLut = coordinator::toggleLUT,
@@ -190,7 +197,7 @@ fun MulticamStage(
                         coordinator.add(row.record, reachable = true, slot = slot)
                     }
                 },
-                empty = MulticamCopy.EMPTY_PICKER,
+                empty = stringResource(R.string.multicam_empty_picker),
             )
         }
     }
@@ -204,7 +211,7 @@ fun MulticamStage(
                     close()
                 }) { Text(MultiviewNetworkRestore.CLOSE_ACTION) }
             },
-            dismissButton = { TextButton(onClick = { leaving = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { leaving = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }
@@ -217,16 +224,21 @@ private object MulticamTileAction {
 }
 
 /** The member's values as the shared stage shows them; unknown stays unknown. */
-internal fun tile(member: MulticamMember, coordinator: MulticamCoordinator): MultiviewTile {
+internal fun tile(member: MulticamMember, coordinator: MulticamCoordinator, context: Context? = null): MultiviewTile {
     val rolling = member.recording.takeIf { member.isLive }
     val (status, detail) = when (val state = member.status) {
-        MemberStatus.Live -> null to "Connected"
-        MemberStatus.Connecting -> MultiviewTileStatus("Connecting…", inProgress = true) to "Connecting…"
+        MemberStatus.Live -> null to lstr(context, R.string.multicam_tile_connected)
+        MemberStatus.Connecting -> MultiviewTileStatus(
+            lstr(context, R.string.multicam_tile_connecting), inProgress = true,
+        ) to lstr(context, R.string.multicam_tile_connecting)
         is MemberStatus.Failed -> MultiviewTileStatus(
             state.reason, inProgress = false,
             actions = listOf(
-                MultiviewCameraAction(MulticamTileAction.RECONNECT, "Reconnect"),
-                MultiviewCameraAction(MulticamTileAction.REMOVE, "Remove", MultiviewCameraAction.Kind.DESTRUCTIVE),
+                MultiviewCameraAction(MulticamTileAction.RECONNECT, lstr(context, R.string.action_reconnect)),
+                MultiviewCameraAction(
+                    MulticamTileAction.REMOVE, lstr(context, R.string.multicam_tile_remove),
+                    MultiviewCameraAction.Kind.DESTRUCTIVE,
+                ),
             ),
         ) to state.reason
     }
@@ -240,17 +252,21 @@ internal fun tile(member: MulticamMember, coordinator: MulticamCoordinator): Mul
         // Nikon reports no take length: the tile times it from the first recording frame.
         recordingSince = member.recordingSinceMillis.takeIf { rolling == true && !coordinator.groupBusy },
         recording = member.recording == true, note = member.note, tileNote = member.note,
-        readouts = readouts(member, coordinator), status = status, detail = detail,
+        readouts = readouts(member, coordinator, context), status = status, detail = detail,
         failure = (member.status as? MemberStatus.Failed)?.reason,
         actions = listOf(
-            MultiviewCameraAction(MultiviewCameraAction.LIVE_VIEW, "Open Live View", enabled = member.isLive),
+            MultiviewCameraAction(MultiviewCameraAction.LIVE_VIEW, lstr(context, R.string.multicam_tile_open_live_view), enabled = member.isLive),
             MultiviewCameraAction(
-                MulticamTileAction.RECORD, if (member.recording == true) "Stop recording" else "Start recording",
+                MulticamTileAction.RECORD,
+                if (member.recording == true) lstr(context, R.string.record_action_stop) else lstr(context, R.string.record_action_start),
                 MultiviewCameraAction.Kind.RECORD,
                 enabled = member.isLive && !coordinator.groupBusy && coordinator.plan(member.id).isExecutable,
             ),
-            MultiviewCameraAction(MulticamTileAction.RECONNECT, "Reconnect", closes = true),
-            MultiviewCameraAction(MulticamTileAction.REMOVE, "Remove camera", MultiviewCameraAction.Kind.DESTRUCTIVE),
+            MultiviewCameraAction(MulticamTileAction.RECONNECT, lstr(context, R.string.action_reconnect), closes = true),
+            MultiviewCameraAction(
+                MulticamTileAction.REMOVE, lstr(context, R.string.multicam_tile_remove_camera),
+                MultiviewCameraAction.Kind.DESTRUCTIVE,
+            ),
         ),
         accessibilityValue = detail,
     ).withPower(snapshot?.power)
@@ -260,31 +276,31 @@ internal fun tile(member: MulticamMember, coordinator: MulticamCoordinator): Mul
  * ISO, shutter, white balance and focus as read back from the camera. ISO and white balance offer
  * the camera's own advertised choices; picking one writes to that camera only.
  */
-private fun readouts(member: MulticamMember, coordinator: MulticamCoordinator): List<MultiviewReadout> {
+private fun readouts(member: MulticamMember, coordinator: MulticamCoordinator, context: Context? = null): List<MultiviewReadout> {
     val properties = member.properties
     return listOf(
         MultiviewReadout(
-            "ISO", properties.iso?.toString() ?: MultiviewTally.UNAVAILABLE,
-            choices(SettingKey.ISO, member, coordinator).map { it.second },
+            lstr(context, R.string.camera_label_iso), properties.iso?.toString() ?: MultiviewTally.UNAVAILABLE,
+            choices(SettingKey.ISO, member, coordinator, context).map { it.second },
         ),
-        MultiviewReadout("SHUTTER", properties.shutterAngle ?: properties.shutterSpeed ?: MultiviewTally.UNAVAILABLE),
+        MultiviewReadout(lstr(context, R.string.camera_label_shutter), properties.shutterAngle ?: properties.shutterSpeed ?: MultiviewTally.UNAVAILABLE),
         MultiviewReadout(
-            "WB", properties.whiteBalanceKelvin?.let { "${it}K" } ?: properties.whiteBalanceMode ?: MultiviewTally.UNAVAILABLE,
-            choices(SettingKey.WHITE_BALANCE, member, coordinator).map { it.second },
+            lstr(context, R.string.camera_label_wb), properties.whiteBalanceKelvin?.let { "${it}K" } ?: properties.whiteBalanceMode ?: MultiviewTally.UNAVAILABLE,
+            choices(SettingKey.WHITE_BALANCE, member, coordinator, context).map { it.second },
         ),
-        MultiviewReadout("FOCUS", properties.focusMode ?: MultiviewTally.UNAVAILABLE),
+        MultiviewReadout(lstr(context, R.string.camera_label_focus), properties.focusMode ?: MultiviewTally.UNAVAILABLE),
     )
 }
 
 /** What the camera advertises for [key], with the name the stage shows. */
-private fun choices(key: SettingKey, member: MulticamMember, coordinator: MulticamCoordinator): List<Pair<SettingValue, String>> =
+private fun choices(key: SettingKey, member: MulticamMember, coordinator: MulticamCoordinator, context: Context? = null): List<Pair<SettingValue, String>> =
     coordinator.descriptor(key, member)?.takeIf { it.availability == Availability.Available }?.domain?.choices.orEmpty()
         .mapNotNull { choice ->
             val name = when (choice) {
                 is SettingValue.Iso -> (choice.value as? ISOValue.Manual)?.iso?.toString()
                 is SettingValue.WhiteBalance -> when (val wb = choice.value) {
                     is WhiteBalanceValue.Preset -> wb.id
-                    WhiteBalanceValue.Auto -> "Auto"
+                    WhiteBalanceValue.Auto -> lstr(context, R.string.multicam_wb_auto)
                     else -> null
                 }
                 else -> null

@@ -953,4 +953,31 @@
     <string name="red_copy_http_failure">RED returned HTTP %1$d. Please try again.</string>
     <string name="red_copy_web_page">RED returned a web page instead of the LUT archive. Accept the terms again and retry.</string>
     <string name="red_copy_not_archive">RED\'s download was not a zip archive. Please try again.</string>
+
+    <!-- Multiview operator copy (MulticamCoordinator / MulticamStage / settings / LUT panel) -->
+    <string name="multicam_session_full">Multiview holds four cameras.</string>
+    <string name="multicam_already_member">That camera is already on the stage.</string>
+    <string name="multicam_camera_wifi">Camera Wi-Fi can\'t join Multiview.</string>
+    <string name="multicam_not_reachable">Not reachable.</string>
+    <string name="multicam_empty_picker">No other cameras reachable. Pair one, or plug USB-C / join the same network.</string>
+    <string name="multicam_couldnt_connect">Couldn\'t connect</string>
+    <string name="multicam_lost_connection">Connection lost</string>
+    <string name="multicam_not_applied">%1$s not applied</string>
+    <string name="multicam_movie_mode_only">Movie mode only.</string>
+    <string name="multicam_support_unknown">Multiview support is not known for this setup.</string>
+    <string name="multicam_tile_connected">Connected</string>
+    <string name="multicam_tile_connecting">Connecting…</string>
+    <string name="multicam_tile_remove">Remove</string>
+    <string name="multicam_tile_open_live_view">Open Live View</string>
+    <string name="multicam_tile_remove_camera">Remove camera</string>
+    <string name="multicam_settings_title">Camera</string>
+    <string name="multicam_settings_close">Close camera settings</string>
+    <string name="multicam_settings_picture">%1$s picture</string>
+    <string name="multicam_tab_camera">Camera %1$s</string>
+    <string name="multicam_lut_title">LUT</string>
+    <string name="multicam_lut_close">Close LUT</string>
+    <string name="multicam_lut_on">On</string>
+    <string name="multicam_lut_off">Off</string>
+    <string name="multicam_lut_selected">Selected</string>
+    <string name="multicam_wb_auto">Auto</string>
 </resources>

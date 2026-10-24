@@ -21,12 +21,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.opencapture.openzcine.R
 import com.opencapture.monitorui.MonitorIcon
 import com.opencapture.monitorui.MonitorImagePreview
 import com.opencapture.monitorui.MonitorInspector
@@ -133,7 +135,7 @@ internal fun MulticamCameraSettings(
     val state by control.state.collectAsState()
     val member = coordinator.member(editor.member)
     MonitorInspector(
-        title = "Camera",
+        title = stringResource(R.string.multicam_settings_title),
         viewportWidth = viewport.width,
         viewportHeight = viewport.height,
         onDismiss = coordinator::closeCameraSettings,
@@ -144,7 +146,7 @@ internal fun MulticamCameraSettings(
         safeTrailing = viewport.safeArea.trailing,
         safeTop = viewport.safeArea.top,
         safeBottom = viewport.safeArea.bottom,
-        close = { MulticamPanelClose("Close camera settings", coordinator::closeCameraSettings) },
+        close = { MulticamPanelClose(stringResource(R.string.multicam_settings_close), coordinator::closeCameraSettings) },
         compactHeader = true,
     ) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -158,7 +160,7 @@ internal fun MulticamCameraSettings(
             val scroll = rememberScrollState()
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // This member's own accepted picture (its look applied), never another camera's.
-                MonitorImagePreview(member?.frame, "${member?.displayName.orEmpty()} picture",
+                MonitorImagePreview(member?.frame, stringResource(R.string.multicam_settings_picture, member?.displayName.orEmpty()),
                     Modifier.testTag("multiview.settings.preview"))
                 if (state.snapshot != null) {
                     multiviewEditableSettings.forEach { key ->
@@ -192,7 +194,7 @@ internal fun MulticamMemberTabs(
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
         slots.forEachIndexed { index, slot ->
             MonitorTab(slot == selected, { if (slot != selected) select(slot) },
-                Modifier.testTag(identifier(slot)), separator = index > 0, accessibilityLabel = "Camera ${title(slot)}") {
+                Modifier.testTag(identifier(slot)), separator = index > 0, accessibilityLabel = stringResource(R.string.multicam_tab_camera, title(slot))) {
                 Text(title(slot), style = MonitorTypography.text(13f, FontWeight.SemiBold),
                     color = if (slot == selected) MonitorPalette.text else MonitorPalette.muted)
             }

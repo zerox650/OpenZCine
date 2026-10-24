@@ -1,5 +1,6 @@
 package com.opencapture.openzcine.multicam
 
+import android.content.Context
 import com.opencapture.opencine.multicam.RecordAll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -13,6 +14,8 @@ import com.opencapture.opencine.core.ConnectionState
 import com.opencapture.opencine.core.SettingAccess
 import com.opencapture.openzcine.FeedLut
 import com.opencapture.openzcine.FeedLutSelection
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import com.opencapture.openzcine.lut.AndroidLutLibrary
 import com.opencapture.opencine.appkit.MultiviewStageState
 import com.opencapture.opencine.appkit.MultiviewStageLayout
@@ -104,11 +107,11 @@ private fun multicamQualification(
     )
 }
 
-private fun qualificationCopy(reason: MulticamQualificationRefusal): String = when (reason) {
-    MulticamQualificationRefusal.ALREADY_MEMBER -> MulticamCopy.ALREADY_MEMBER
-    MulticamQualificationRefusal.UNSUPPORTED_CONFIGURATION -> MulticamCopy.CAMERA_WIFI
-    MulticamQualificationRefusal.OPERATION_UNAVAILABLE -> "Movie mode only."
-    MulticamQualificationRefusal.NOT_REACHABLE -> MulticamCopy.NOT_REACHABLE
+private fun qualificationCopy(reason: MulticamQualificationRefusal, context: Context?): String = when (reason) {
+    MulticamQualificationRefusal.ALREADY_MEMBER -> lstr(context, R.string.multicam_already_member)
+    MulticamQualificationRefusal.UNSUPPORTED_CONFIGURATION -> lstr(context, R.string.multicam_camera_wifi)
+    MulticamQualificationRefusal.OPERATION_UNAVAILABLE -> lstr(context, R.string.multicam_movie_mode_only)
+    MulticamQualificationRefusal.NOT_REACHABLE -> lstr(context, R.string.multicam_not_reachable)
 }
 
 sealed interface MemberStatus {
@@ -179,6 +182,11 @@ class MulticamCoordinator(
     private val operatorLook: () -> FeedLutSelection = { FeedLutSelection.BuiltIn(FeedLut.LOG3G10_709) },
     /** The app's one stored-LUT library, for the per-member look list. */
     internal val lutLibrary: AndroidLutLibrary? = null,
+    /**
+     * Resolves operator-facing copy in the operator's language. Null keeps the English fallback,
+     * which is what the JVM tests assert on.
+     */
+    private val context: Context? = null,
 ) {
     var presented by mutableStateOf(false)
         private set
@@ -244,9 +252,9 @@ class MulticamCoordinator(
     fun refusal(record: SavedCameraRecord, reachable: Boolean): String? =
         when (val reason = admission(record, reachable).firstOrNull()) {
             null -> null
-            is AdmissionReason.IntegrationRefused -> qualificationCopy(reason.reason)
-            AdmissionReason.QualificationUnknown -> "Multiview support is not known for this setup."
-            else -> MulticamCopy.SESSION_FULL
+            is AdmissionReason.IntegrationRefused -> qualificationCopy(reason.reason, context)
+            AdmissionReason.QualificationUnknown -> lstr(context, R.string.multicam_support_unknown)
+            else -> lstr(context, R.string.multicam_session_full)
         }
 
     fun add(record: SavedCameraRecord, reachable: Boolean, slot: Int? = null): MulticamMember? {
@@ -257,7 +265,7 @@ class MulticamCoordinator(
         val taken = members.map { it.slot }.toSet()
         val target = slot?.takeIf { it !in taken } ?: (0 until TILES).firstOrNull { it !in taken }
         if (target == null) {
-            toast = MulticamCopy.SESSION_FULL
+            toast = lstr(context, R.string.multicam_session_full)
             return null
         }
         val member = MulticamMember(target, record)
@@ -348,8 +356,8 @@ class MulticamCoordinator(
             member.note =
                 when (finished?.stage) {
                     CommandStage.Confirmed, CommandStage.Failed(CommandFailure.SUPERSEDED) ->
-                        member.note?.takeIf { it != MulticamCopy.notApplied(label) }
-                    else -> MulticamCopy.notApplied(label)
+                        member.note?.takeIf { it != lstr(context, R.string.multicam_not_applied, label) }
+                    else -> lstr(context, R.string.multicam_not_applied, label)
                 }
         }
     }
@@ -502,7 +510,7 @@ class MulticamCoordinator(
         if (member.link?.session?.state?.value is CameraSessionState.Connected) {
             feed(member)
         } else {
-            fail(member, MulticamCopy.LOST_CONNECTION)
+            fail(member, lstr(context, R.string.multicam_lost_connection))
         }
     }
 
@@ -560,7 +568,7 @@ class MulticamCoordinator(
                 val identity = (link?.session?.state?.value as? CameraSessionState.Connected)?.identity
                 if (link == null || identity == null) {
                     link?.let { closeLink(it) }
-                    member.status = MemberStatus.Failed(MulticamCopy.COULDNT_CONNECT)
+                    member.status = MemberStatus.Failed(lstr(context, R.string.multicam_couldnt_connect))
                     return@launch
                 }
                 // The member is the body serial, checked here because Android records carry none:
@@ -568,7 +576,7 @@ class MulticamCoordinator(
                 val serial = identity.serialNumber.takeIf { it.isNotBlank() }
                 if (serial != null && members.any { it !== member && it.serial == serial }) {
                     closeLink(link)
-                    toast = MulticamCopy.ALREADY_MEMBER
+                    toast = lstr(context, R.string.multicam_already_member)
                     remove(member.id)
                     return@launch
                 }
@@ -615,7 +623,7 @@ class MulticamCoordinator(
                 }
                 launch {
                     link.session.state.collect { state ->
-                        if (state is CameraSessionState.Disconnected) fail(member, MulticamCopy.LOST_CONNECTION)
+                        if (state is CameraSessionState.Disconnected) fail(member, lstr(context, R.string.multicam_lost_connection))
                     }
                 }
                 val decode = decoder()

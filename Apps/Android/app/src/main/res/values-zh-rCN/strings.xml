@@ -953,4 +953,31 @@
     <string name="red_copy_http_failure">RED 返回 HTTP %1$d。请重试。</string>
     <string name="red_copy_web_page">RED 返回的是网页而非 LUT 压缩包。请重新接受条款并重试。</string>
     <string name="red_copy_not_archive">RED 的下载不是 zip 压缩包。请重试。</string>
+
+    <!-- Multiview 操作员文案（MulticamCoordinator / MulticamStage / 设置 / LUT 面板） -->
+    <string name="multicam_session_full">Multiview 最多容纳四台相机。</string>
+    <string name="multicam_already_member">该相机已在 Multiview 中。</string>
+    <string name="multicam_camera_wifi">相机 Wi-Fi 无法加入 Multiview。</string>
+    <string name="multicam_not_reachable">无法连接。</string>
+    <string name="multicam_empty_picker">没有其他可连接的相机。请配对一台，或插入 USB-C / 加入同一网络。</string>
+    <string name="multicam_couldnt_connect">无法连接</string>
+    <string name="multicam_lost_connection">连接已断开</string>
+    <string name="multicam_not_applied">%1$s 未应用</string>
+    <string name="multicam_movie_mode_only">仅限电影模式。</string>
+    <string name="multicam_support_unknown">此设置是否支持 Multiview 尚不明确。</string>
+    <string name="multicam_tile_connected">已连接</string>
+    <string name="multicam_tile_connecting">正在连接…</string>
+    <string name="multicam_tile_remove">移除</string>
+    <string name="multicam_tile_open_live_view">打开实时取景</string>
+    <string name="multicam_tile_remove_camera">移除相机</string>
+    <string name="multicam_settings_title">相机</string>
+    <string name="multicam_settings_close">关闭相机设置</string>
+    <string name="multicam_settings_picture">%1$s 的画面</string>
+    <string name="multicam_tab_camera">相机 %1$s</string>
+    <string name="multicam_lut_title">LUT</string>
+    <string name="multicam_lut_close">关闭 LUT</string>
+    <string name="multicam_lut_on">开</string>
+    <string name="multicam_lut_off">关</string>
+    <string name="multicam_lut_selected">已选择</string>
+    <string name="multicam_wb_auto">自动</string>
 </resources>
