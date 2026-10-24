@@ -1,5 +1,6 @@
 package com.opencapture.openzcine
 
+import android.content.Context
 import com.opencapture.opencine.cameracontrols.CaptureDrumWheel
 import com.opencapture.opencine.nikon.StillPickerLadders
 import com.opencapture.opencine.nikon.NikonCapturePopupKind
@@ -152,6 +153,8 @@ internal fun photographyCaptureSettings(
     properties: CameraPropertySnapshot,
     wbPicker: MonitorPickerPresentation?,
     photoTimerDelaySeconds: Int,
+    /** Localizes the shared Nikon popups this projection attaches. */
+    context: Context? = null,
 ): List<MonitorCaptureSettingPresentation> {
     val exposureMode = properties.exposureMode
     val userProgram = properties.userModeProgram
@@ -282,7 +285,7 @@ internal fun photographyCaptureSettings(
             popup = NikonCapturePopupState(
                 kind = NikonCapturePopupKind.STILL_ISO, title = "ISO", subtitle = "Sensitivity", modes = emptyList(),
                 circuitIndex = if (properties.isoAuto == true) 0 else 1, photography = true,
-                liveIso = properties.iso?.toInt(), stillAllowsManualIso = allowsManualISO,
+                liveIso = properties.iso?.toInt(), stillAllowsManualIso = allowsManualISO, context = context,
             ),
         )
 
@@ -522,7 +525,7 @@ internal fun photographyCaptureSettings(
             stillWhiteBalanceValue(properties),
             "5560K",
             wbPicker?.let { picker ->
-                picker.copy(popup = nikonCapturePopup(picker).copy(photography = true))
+                picker.copy(popup = nikonCapturePopup(picker, context).copy(photography = true))
             },
         ),
         tile(MonitorPickerKind.METER, "METER", properties.meteringMode, "Matrix", meterPicker),

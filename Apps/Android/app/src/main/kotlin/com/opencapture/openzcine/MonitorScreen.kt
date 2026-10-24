@@ -648,6 +648,7 @@ internal fun MonitorScreen(
                 shutterLockedOnCamera = effectiveShutterLocked,
                 isoAuto = cameraProperties.isoAuto,
                 exposureMode = cameraProperties.exposureMode,
+                context = appContext,
             ).let { settings ->
                 // A watcher's strip shows the broadcaster's values (iOS `applyRelayState`);
                 // no local session ever fills these cells.
@@ -682,6 +683,7 @@ internal fun MonitorScreen(
                             .firstOrNull { it.kind == MonitorPickerKind.WHITE_BALANCE }
                             ?.picker,
                     photoTimerDelaySeconds = photoTimerDelaySeconds,
+                    context = appContext,
                 )
             }
         }

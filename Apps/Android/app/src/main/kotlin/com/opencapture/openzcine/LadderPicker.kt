@@ -2,6 +2,7 @@ package com.opencapture.openzcine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.opencapture.opencine.appkit.MonitorControlModel
 import com.opencapture.opencine.cameracontrols.LadderSheet
 import com.opencapture.opencine.nikon.NikonLadderControl
@@ -30,7 +31,7 @@ internal fun VideoLadderBody(
     recordingFormats: List<NikonRecordingFormatPresentation> = emptyList(),
 ) {
     LadderSheet(
-        presentation = videoLadderPresentation(picker),
+        presentation = videoLadderPresentation(picker, LocalContext.current),
         enabled = controlsEnabled,
         onWrite = { write ->
             val (request, value) = requestForLadderWrite(picker, write) ?: return@LadderSheet

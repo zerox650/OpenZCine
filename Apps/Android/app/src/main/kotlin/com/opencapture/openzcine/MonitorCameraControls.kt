@@ -248,6 +248,8 @@ internal fun monitorCaptureSettings(
     isoAuto: Boolean? = null,
     /** Exposure program mode (M/P/A/S/…); Auto Off / manual ISO only in M. */
     exposureMode: String? = null,
+    /** Localizes the attached Nikon capture popups; absent keeps the bundled English copy. */
+    context: Context? = null,
 ): List<MonitorCaptureSettingPresentation> {
     val primary = dashboard.tiles.associateBy(CommandTilePresentation::kind)
     val focus =
@@ -342,6 +344,7 @@ internal fun monitorCaptureSettings(
             isoAuto = isoAuto,
             exposureMode = exposureMode,
             strings = strings,
+            context = context,
         )
     val shutterPresentation =
         shutterPickerPresentation(
@@ -404,7 +407,7 @@ internal fun monitorCaptureSettings(
         run {
             val wbTile = primary[CommandTileKind.WHITE_BALANCE]
             val tintTile = exposure.getOrNull(3)
-            val wbPresentation = wbPickerPresentation(wbTile, tintTile, strings, codec)
+            val wbPresentation = wbPickerPresentation(wbTile, tintTile, strings, codec, context)
             MonitorCaptureSettingPresentation(
                 kind = MonitorPickerKind.WHITE_BALANCE,
                 label = strings.resolve(R.string.camera_label_wb),
@@ -601,6 +604,8 @@ internal fun wbPickerPresentation(
     tintTile: CommandTilePresentation?,
     strings: PhoneStringResolver,
     codec: String = "",
+    /** Localizes the popup's lock banners and hints; absent keeps the bundled English copy. */
+    context: Context? = null,
 ): MonitorPickerPresentation? {
     val live = wbTile?.value?.takeIf { it != "—" } ?: return null
     // Open when the body has a WB readout even if the write domain is still
@@ -675,6 +680,7 @@ internal fun wbPickerPresentation(
             whiteBalanceMode = if (initialMode == 0) "Color temp" else live,
             tintCells = WhiteBalanceTint.cells(tintCurrent) ?: (0 to 0),
             tintAvailable = tintTile?.request != null,
+            context = context,
         ),
     )
 }
@@ -692,6 +698,8 @@ internal fun shutterPickerPresentation(
     shutterModeTile: CommandTilePresentation?,
     strings: PhoneStringResolver,
     shutterLocked: Boolean? = null,
+    /** Localizes the popup's lock banners and hints; absent keeps the bundled English copy. */
+    context: Context? = null,
 ): MonitorPickerPresentation? {
     val live = shutterTile?.value?.takeIf { it != "—" } ?: return null
     // Only the camera TV-lock gate dims the drum. Empty descriptor options or a
@@ -745,6 +753,7 @@ internal fun shutterPickerPresentation(
         popup = NikonCapturePopupState(
             kind = NikonCapturePopupKind.SHUTTER, title = title, subtitle = ShutterPickerPolicy.SUBTITLE,
             modes = emptyList(), circuitIndex = if (modeIsSpeed) 1 else 0, shutterLockedOnCamera = lockedOnCamera,
+            context = context,
         ),
     )
 }
@@ -765,6 +774,8 @@ internal fun isoPickerPresentation(
     isoAuto: Boolean?,
     exposureMode: String?,
     strings: PhoneStringResolver,
+    /** Localizes the popup's lock banners and hints; absent keeps the bundled English copy. */
+    context: Context? = null,
 ): MonitorPickerPresentation? {
     // Prefer live ISO. Auto-mode tiles may read "A3200" / "Auto" — strip the Auto prefix for the drum.
     val live =
@@ -850,7 +861,7 @@ internal fun isoPickerPresentation(
                 IsoPickerPolicy.autoISOModeIndex(codec, isoAuto, exposureMode),
             // Drum is camera-owned while Auto is on or (non-R3D) mode is not M.
             drumInteractionLocked = cameraOwned,
-            popup = isoPopup(title, subtitle, codec, live).copy(
+            popup = isoPopup(title, subtitle, codec, live, context).copy(
                 circuitIndex = IsoPickerPolicy.autoISOModeIndex(codec, isoAuto, exposureMode),
                 autoIso = true, isoCameraOwned = cameraOwned,
                 allowsManualIso = IsoPickerPolicy.allowsManualISO(codec, exposureMode),
@@ -877,7 +888,7 @@ internal fun isoPickerPresentation(
                         markedValues = IsoPickerPolicy.markedValues(codec, 0),
                     ),
                 ),
-            popup = isoPopup(title, subtitle, codec, live),
+            popup = isoPopup(title, subtitle, codec, live, context),
         )
     }
     val baseLabel = baseIsoTile?.value?.takeIf { it != "—" }
@@ -922,9 +933,10 @@ internal fun isoPickerPresentation(
 }
 
 /** The movie ISO popup's facts every layout shares: the codec picks the ladders and marks. */
-private fun isoPopup(title: String, subtitle: String, codec: String, live: String?) = NikonCapturePopupState(
+private fun isoPopup(title: String, subtitle: String, codec: String, live: String?,
+    context: Context? = null) = NikonCapturePopupState(
     kind = NikonCapturePopupKind.ISO, title = title, subtitle = subtitle, modes = emptyList(),
-    codec = codec, liveIso = live?.toIntOrNull(),
+    codec = codec, liveIso = live?.toIntOrNull(), context = context,
 )
 
 /** The common capture setting this picker edits; null for a Nikon-only picker. */

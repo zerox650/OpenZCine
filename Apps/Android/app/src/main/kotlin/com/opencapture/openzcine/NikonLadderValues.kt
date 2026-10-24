@@ -1,5 +1,6 @@
 package com.opencapture.openzcine
 
+import android.content.Context
 import com.opencapture.opencine.cameracontrols.CaptureFormatChoice
 import com.opencapture.opencine.cameracontrols.CaptureFormatGroup
 import com.opencapture.opencine.nikon.CameraControl
@@ -48,7 +49,7 @@ internal fun ladderShowsTimerShots(
  * white balance) attach their facts as [MonitorPickerPresentation.popup]; every other picker is
  * one setting, or independent settings when no tab writes on activation.
  */
-internal fun nikonCapturePopup(picker: MonitorPickerPresentation): NikonCapturePopupState {
+internal fun nikonCapturePopup(picker: MonitorPickerPresentation, context: Context? = null): NikonCapturePopupState {
     val first = picker.modes.firstOrNull()?.request
     val facts = picker.popup ?: NikonCapturePopupState(
         kind = when {
@@ -70,6 +71,7 @@ internal fun nikonCapturePopup(picker: MonitorPickerPresentation): NikonCaptureP
             ?.let { WhiteBalanceTint.cells(it.request.currentValue.ifBlank { "Neutral" }) }
             ?: (0 to 0),
         tintAvailable = true,
+        context = context,
     )
     return facts.copy(
         title = picker.title,
@@ -89,8 +91,8 @@ internal fun nikonCapturePopup(picker: MonitorPickerPresentation): NikonCaptureP
     )
 }
 
-internal fun videoLadderPresentation(picker: MonitorPickerPresentation): LadderSheetPresentation<NikonLadderControl> =
-    nikonCapturePopup(picker).presentation
+internal fun videoLadderPresentation(picker: MonitorPickerPresentation, context: Context? = null): LadderSheetPresentation<NikonLadderControl> =
+    nikonCapturePopup(picker, context).presentation
 
 /** The control a circuit write drives, so it travels on the tab's own activation request. */
 private fun circuitControls(key: NikonLadderControl): Set<CameraControl> = when (key) {
