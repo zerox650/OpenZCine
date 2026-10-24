@@ -16,6 +16,7 @@ import com.opencapture.opencine.nikon.NikonStillPhotoClassification
 import com.opencapture.opencine.nikon.NikonStillPreviewStrategy
 import com.opencapture.openzcine.bridge.SwiftCore
 import com.opencapture.openzcine.diagnostics.AndroidDiagnosticEvent
+import com.opencapture.openzcine.lstr
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
@@ -188,7 +189,7 @@ private class NikonStillPictureIO(
                 is MediaTransferPreparation.Ready -> observe(prepared.entry, classification, publication)
                 is MediaTransferPreparation.Failed -> {
                     publication.publish(StillPreviewStates.transferFailed(prepared.message,
-                        thumbnails[request.record.asset.id] != null).pictureStatus())
+                        thumbnails[request.record.asset.id] != null, context).pictureStatus())
                     thumbnails[request.record.asset.id]
                 }
                 MediaTransferPreparation.Cancelled, MediaTransferPreparation.Loading -> null
@@ -206,7 +207,7 @@ private class NikonStillPictureIO(
             val bytes = entry.downloadedBytes
             when (entry.state) {
                 MediaCacheState.ACTIVE -> {
-                    publication.publish(StillPreviewStates.downloading(classification, entry.progress).pictureStatus())
+                    publication.publish(StillPreviewStates.downloading(classification, entry.progress, context).pictureStatus())
                     if (classification.previewStrategy == NikonStillPreviewStrategy.PROGRESSIVE && bytes > 0 &&
                         (lastDecodeBytes < 0 || bytes - lastDecodeBytes >= PROGRESSIVE_DECODE_STEP_BYTES)) {
                         val bitmap = withContext(Dispatchers.IO) { decodeCacheBitmap(entry) }
@@ -228,14 +229,15 @@ private class NikonStillPictureIO(
                     }
                     if (!publication.isCurrent) return null
                     publication.publish(if (bitmap != null) StillPreviewUiState.FullPreview.pictureStatus()
-                        else StillPreviewStates.decoderUnavailable(classification, thumbnail != null).pictureStatus())
+                        else StillPreviewStates.decoderUnavailable(classification, thumbnail != null, context).pictureStatus())
                     if (bitmap == null && thumbnail != null) publication.publish(thumbnail)
                     return bitmap ?: thumbnail
                 }
                 MediaCacheState.FAILED, MediaCacheState.CANCELLED -> {
                     publication.publish(StillPreviewStates.transferFailed(
-                        if (entry.state == MediaCacheState.FAILED) "Camera image transfer failed." else "Camera image transfer was cancelled.",
-                        thumbnail != null).pictureStatus())
+                        if (entry.state == MediaCacheState.FAILED) lstr(context, R.string.still_preview_transfer_failed)
+                            else lstr(context, R.string.still_preview_transfer_cancelled),
+                        thumbnail != null, context).pictureStatus())
                     if (thumbnail != null) publication.publish(thumbnail)
                     return thumbnail
                 }

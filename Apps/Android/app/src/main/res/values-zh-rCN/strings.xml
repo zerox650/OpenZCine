@@ -1142,4 +1142,23 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="media_browse_listing_camera">正在列出相机中的片段…</string>
     <string name="media_browse_checking_cache">正在检查已保存的完整缓存条目…</string>
     <string name="media_browse_opening_local">正在打开本地媒体库…</string>
+    <string name="media_camera_size_unknown">相机未提供%1$s的大小。</string>
+    <string name="media_transfer_cache_retired">传输源已失效。</string>
+    <string name="media_cache_write_failed">媒体缓存写入失败。</string>
+    <string name="still_preview_loading_progressive">正在加载 %1$s 全图预览…</string>
+    <string name="still_preview_downloading_complete">正在下载 %1$s 图像…</string>
+    <string name="still_preview_downloading_file">正在下载 %1$s 文件…</string>
+    <string name="still_preview_decoder_unavailable_file">Android 上无法解码 %1$s 文件以查看全图。</string>
+    <string name="still_preview_decoder_unavailable_image">此 Android 设备无法解码这张 %1$s 图像以查看全图。</string>
+    <string name="still_preview_thumbnail_shown">正在显示相机缩略图。</string>
+    <string name="still_preview_no_thumbnail">相机未提供缩略图。</string>
+    <string name="still_preview_transfer_failed">相机图像传输失败。</string>
+    <string name="still_preview_transfer_cancelled">相机图像传输已取消。</string>
+    <string name="gyro_share_not_finalized">此陀螺仪日志尚未完成。</string>
+    <string name="gyro_share_directory_missing">共享目录缺失。</string>
+    <string name="gyro_share_publish_failed">无法发布陀螺仪日志的共享副本。</string>
+    <string name="gyro_share_storage_failed">无法创建陀螺仪日志的共享存储空间。</string>
+    <string name="media_date_window_today">今天</string>
+    <string name="media_date_window_7_days">近 7 天</string>
+    <string name="media_date_window_30_days">近 30 天</string>
 </resources>

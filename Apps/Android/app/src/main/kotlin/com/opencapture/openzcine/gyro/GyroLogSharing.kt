@@ -1,5 +1,8 @@
 package com.opencapture.openzcine.gyro
 
+import android.content.Context
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import java.io.File
 import java.io.IOException
 import java.util.UUID
@@ -16,22 +19,22 @@ import kotlinx.coroutines.withContext
 /** Owns cancellable staging until Main hands a unique, complete copy to the chooser. */
 internal fun shareGyroLog(scope: CoroutineScope, cacheDirectory: File, entry: GyroLogEntry,
     onReady: (File) -> Unit, onFailure: (Exception) -> Unit,
-    ioDispatcher: CoroutineDispatcher = Dispatchers.IO): Job = scope.launch(Dispatchers.Main.immediate) {
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO, context: Context? = null): Job = scope.launch(Dispatchers.Main.immediate) {
     var ownedDirectory: File? = null
     var shared = false
     try {
-        check(entry.canShare) { "This gyro log is not finalized." }
+        check(entry.canShare) { lstr(context, R.string.gyro_share_not_finalized) }
         val staged = withContext(ioDispatcher) {
             ensureActive()
             val id = UUID.randomUUID().toString()
             val staging = File(cacheDirectory, "share/staging/gyro/$id")
             ownedDirectory = staging
-            createGyroShareDirectory(staging)
+            createGyroShareDirectory(staging, context)
             copyGyroLog(entry.file, File(staging, entry.file.name)) { ensureActive() }
             val ready = File(cacheDirectory, "share/ready/gyro/$id")
-            createGyroShareDirectory(ready.parentFile ?: throw IOException("Missing share directory."))
+            createGyroShareDirectory(ready.parentFile ?: throw IOException(lstr(context, R.string.gyro_share_directory_missing)), context)
             ensureActive()
-            if (!staging.renameTo(ready)) throw IOException("Could not publish the gyro share copy.")
+            if (!staging.renameTo(ready)) throw IOException(lstr(context, R.string.gyro_share_publish_failed))
             ownedDirectory = ready
             File(ready, entry.file.name)
         }
@@ -49,8 +52,8 @@ internal fun shareGyroLog(scope: CoroutineScope, cacheDirectory: File, entry: Gy
     }
 }
 
-private fun createGyroShareDirectory(directory: File) {
-    if (!directory.isDirectory && !directory.mkdirs()) throw IOException("Could not create gyro share storage.")
+private fun createGyroShareDirectory(directory: File, context: Context? = null) {
+    if (!directory.isDirectory && !directory.mkdirs()) throw IOException(lstr(context, R.string.gyro_share_storage_failed))
 }
 
 private fun copyGyroLog(source: File, destination: File, ensureCurrent: () -> Unit) {

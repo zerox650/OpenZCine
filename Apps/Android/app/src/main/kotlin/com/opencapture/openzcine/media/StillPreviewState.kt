@@ -1,7 +1,10 @@
 package com.opencapture.openzcine.media
 
+import android.content.Context
 import com.opencapture.opencine.nikon.NikonStillPhotoClassification
 import com.opencapture.opencine.nikon.NikonStillPreviewStrategy
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 
 /** The text-and-chrome state of one Android still-photo viewer request. */
 internal sealed interface StillPreviewUiState {
@@ -34,17 +37,18 @@ internal object StillPreviewStates {
     fun downloading(
         classification: NikonStillPhotoClassification,
         progress: Double,
+        context: Context? = null,
     ): StillPreviewUiState.Downloading {
         val message =
             when (classification.previewStrategy) {
                 NikonStillPreviewStrategy.PROGRESSIVE ->
-                    "Loading full ${classification.formatLabel} preview…"
+                    lstr(context, R.string.still_preview_loading_progressive, classification.formatLabel)
                 NikonStillPreviewStrategy.COMPLETE_FILE ->
-                    "Downloading ${classification.formatLabel} image…"
+                    lstr(context, R.string.still_preview_downloading_complete, classification.formatLabel)
                 // The RAW side of a pair transfers for sharing even though it
                 // never claims a decoded full preview.
                 NikonStillPreviewStrategy.THUMBNAIL_ONLY ->
-                    "Downloading ${classification.formatLabel} file…"
+                    lstr(context, R.string.still_preview_downloading_file, classification.formatLabel)
             }
         return StillPreviewUiState.Downloading(progress.coerceIn(0.0, 1.0), message)
     }
@@ -52,24 +56,26 @@ internal object StillPreviewStates {
     fun decoderUnavailable(
         classification: NikonStillPhotoClassification,
         hasThumbnail: Boolean,
+        context: Context? = null,
     ): StillPreviewUiState.ThumbnailFallback =
         StillPreviewUiState.ThumbnailFallback(
             buildString {
                 append(
                     when (classification.previewStrategy) {
                         NikonStillPreviewStrategy.THUMBNAIL_ONLY ->
-                            "${classification.formatLabel} files are not decoded for a full preview on Android."
+                            lstr(context, R.string.still_preview_decoder_unavailable_file, classification.formatLabel)
                         NikonStillPreviewStrategy.PROGRESSIVE,
                         NikonStillPreviewStrategy.COMPLETE_FILE,
                         ->
-                            "This ${classification.formatLabel} image could not be decoded for a full preview on this Android device."
+                            lstr(context, R.string.still_preview_decoder_unavailable_image, classification.formatLabel)
                     },
                 )
+                append(' ')
                 append(
                     if (hasThumbnail) {
-                        " Showing the camera thumbnail."
+                        lstr(context, R.string.still_preview_thumbnail_shown)
                     } else {
-                        " The camera did not provide a thumbnail."
+                        lstr(context, R.string.still_preview_no_thumbnail)
                     },
                 )
             },
@@ -78,9 +84,10 @@ internal object StillPreviewStates {
     fun transferFailed(
         message: String,
         hasThumbnail: Boolean,
+        context: Context? = null,
     ): StillPreviewUiState.Failed =
         StillPreviewUiState.Failed(
-            if (hasThumbnail) "$message Showing the camera thumbnail." else message,
+            if (hasThumbnail) "$message ${lstr(context, R.string.still_preview_thumbnail_shown)}" else message,
         )
 }
 

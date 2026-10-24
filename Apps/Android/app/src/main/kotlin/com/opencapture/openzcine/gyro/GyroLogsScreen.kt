@@ -123,7 +123,7 @@ internal fun GyroLogsScreen(state: GyroCaptureState, onShare: (GyroLogEntry) -> 
 /** Stages off Main under the activity's scope; chooser and failure callbacks run on Main. */
 internal fun shareGyroLog(context: Context, entry: GyroLogEntry, scope: CoroutineScope,
     onFailure: (Exception) -> Unit): Job = shareGyroLog(scope, context.cacheDir, entry,
-    onReady = { staged -> presentGyroLog(context, staged) }, onFailure = onFailure)
+    onReady = { staged -> presentGyroLog(context, staged) }, onFailure = onFailure, context = context)
 
 private fun presentGyroLog(context: Context, staged: File) {
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.media-share", staged)

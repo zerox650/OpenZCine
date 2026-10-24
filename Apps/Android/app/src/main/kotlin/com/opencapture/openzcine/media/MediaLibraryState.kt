@@ -2,11 +2,17 @@ package com.opencapture.openzcine.media
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.StringRes
+import com.opencapture.opencine.appkit.MonitorMediaCatalogByteStore
+import com.opencapture.opencine.appkit.MonitorMediaPreferenceStorage
+import com.opencapture.opencine.appkit.MonitorMediaPreferences
+import com.opencapture.opencine.appkit.MonitorMediaSort
 import com.opencapture.opencine.nikon.NikonMediaClipRecord
 import com.opencapture.opencine.nikon.NikonMediaContentKind
 import com.opencapture.opencine.nikon.NikonMediaObjectIdentity
 import com.opencapture.opencine.nikon.NikonStillPhotoClassification
 import com.opencapture.opencine.nikon.NikonStillPreviewStrategy
+import com.opencapture.openzcine.R
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -15,9 +21,6 @@ import java.security.MessageDigest
 import java.time.LocalDate
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
-import com.opencapture.opencine.appkit.MonitorMediaPreferenceStorage
-import com.opencapture.opencine.appkit.MonitorMediaPreferences
-import com.opencapture.opencine.appkit.MonitorMediaSort
 
 /** The two safe library sources exposed by the Android browser. */
 internal enum class MediaLibrarySource(val title: String) {
@@ -71,10 +74,14 @@ internal enum class MediaPhotoSizeFilter(val title: String) {
 }
 
 /** Relative capture-date windows — the Kotlin mirror of the core's `MediaDateWindow`. */
-internal enum class MediaDateWindowFilter(val title: String, val dayCount: Long) {
-    TODAY("TODAY", 1),
-    LAST_7_DAYS("7 DAYS", 7),
-    LAST_30_DAYS("30 DAYS", 30),
+internal enum class MediaDateWindowFilter(
+    val title: String,
+    val dayCount: Long,
+    @StringRes val labelRes: Int,
+) {
+    TODAY("TODAY", 1, R.string.media_date_window_today),
+    LAST_7_DAYS("7 DAYS", 7, R.string.media_date_window_7_days),
+    LAST_30_DAYS("30 DAYS", 30, R.string.media_date_window_30_days),
     ;
 
     fun contains(captureDate: String, today: LocalDate): Boolean =

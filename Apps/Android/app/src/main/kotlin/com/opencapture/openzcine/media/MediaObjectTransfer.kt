@@ -159,7 +159,7 @@ internal fun prepareMediaObjectTransfer(
     }
     return try {
         val totalBytes = bridge.resolveMediaSize(clip.handle.toInt(), clip.sizeBytes)
-        if (totalBytes < 0) throw IOException("Camera did not provide the $objectLabel size.")
+        if (totalBytes < 0) throw IOException(lstr(context, R.string.media_camera_size_unknown, objectLabel))
         onResolvedSize(totalBytes)
 
         val entry = cacheStore.openEntry(cameraID, MediaCacheObjectIdentity(clip), totalBytes)
@@ -176,7 +176,7 @@ internal fun prepareMediaObjectTransfer(
                 handle = clip.handle.toInt(),
                 reportedSize = totalBytes,
                 resumeOffset = entry.downloadedBytes,
-                listener = entry.mediaTransferListener(),
+                listener = entry.mediaTransferListener(context),
             )
         }
         MediaTransferPreparation.Ready(entry)
@@ -209,6 +209,7 @@ internal class NikonDeliveryOriginals(
     private val pollIntervalMillis: Long = CACHE_PASS_POLL_MILLIS,
     /** Camera transfer of an uncached original also needs the camera source that listed it. */
     private val acquisition: MonitorDeliveryAdmission = admission,
+    private val context: Context? = null,
 ) {
     private val resolved = mutableMapOf<MediaDeliverySelection, MediaCacheEntry?>()
     suspend fun loadCompleteEntries() = withContext(ioContext) {
@@ -230,12 +231,12 @@ internal class NikonDeliveryOriginals(
                     override fun startMediaTransfer(handle: Int, reportedSize: Long, resumeOffset: Long,
                         listener: NikonNative.MediaTransferListener) {
                         if (admitted()) bridge.startMediaTransfer(handle, reportedSize, resumeOffset, listener)
-                        else listener.onFailed("Delivery cache source retired.")
+                        else listener.onFailed(lstr(context, R.string.media_transfer_cache_retired))
                     }
                     override fun stopMediaTransfer() = bridge.stopMediaTransfer()
                 }
                 resolved[item] = cacheOneClipForDelivery(cacheStore, item, admittedBridge, ioContext,
-                    pollIntervalMillis, report = {}, onEntry = { resolved[item] = it })
+                    pollIntervalMillis, report = {}, onEntry = { resolved[item] = it }, context = context)
             }
         },
         progress = { resolved[it]?.progress },
@@ -274,6 +275,7 @@ private suspend fun cacheOneClipForDelivery(
     pollIntervalMillis: Long,
     report: (Double) -> Unit,
     onEntry: (MediaCacheEntry) -> Unit = {},
+    context: Context? = null,
 ): MediaCacheEntry? {
     val preparation =
         withContext(ioContext) {
@@ -283,6 +285,7 @@ private suspend fun cacheOneClipForDelivery(
                 clip = item.clip,
                 objectLabel = "clip",
                 bridge = bridge,
+                context = context,
             )
         }
     val entry = (preparation as? MediaTransferPreparation.Ready)?.entry ?: return null
@@ -314,7 +317,7 @@ private suspend fun cacheOneClipForDelivery(
 private const val CACHE_PASS_POLL_MILLIS = 200L
 
 /** Persists one Swift-owned generic object transfer into a validated cache entry. */
-private fun MediaCacheEntry.mediaTransferListener(): NikonNative.MediaTransferListener =
+private fun MediaCacheEntry.mediaTransferListener(context: Context? = null): NikonNative.MediaTransferListener =
     object : NikonNative.MediaTransferListener {
         override fun onStarted(totalBytes: Long) {
             if (totalBytes != expectedLength) {
@@ -327,7 +330,7 @@ private fun MediaCacheEntry.mediaTransferListener(): NikonNative.MediaTransferLi
                 append(offset, bytes)
                 true
             } catch (error: Exception) {
-                fail(error.asMediaTransferIOException())
+                fail(error.asMediaTransferIOException(context))
                 false
             }
 
@@ -338,7 +341,7 @@ private fun MediaCacheEntry.mediaTransferListener(): NikonNative.MediaTransferLi
                 }
                 complete()
             } catch (error: Exception) {
-                fail(error.asMediaTransferIOException())
+                fail(error.asMediaTransferIOException(context))
             }
         }
 
@@ -351,5 +354,5 @@ private fun MediaCacheEntry.mediaTransferListener(): NikonNative.MediaTransferLi
         }
     }
 
-private fun Exception.asMediaTransferIOException(): IOException =
-    this as? IOException ?: IOException(message ?: "Media cache write failed.", this)
+private fun Exception.asMediaTransferIOException(context: Context? = null): IOException =
+    this as? IOException ?: IOException(message ?: lstr(context, R.string.media_cache_write_failed), this)

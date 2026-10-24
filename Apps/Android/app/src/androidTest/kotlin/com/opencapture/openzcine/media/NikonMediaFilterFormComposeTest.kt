@@ -135,7 +135,8 @@ class NikonMediaFilterFormComposeTest {
             FilterFixtureHost {
                 if (presented) MonitorMediaGalleryFilterDialog(
                     nikonGalleryFilters(filters, offered, listOf(FIRST, SECOND).mapIndexed { index, id ->
-                        MonitorMediaFilterChoice(id.toString(), "SLOT ${index + 1}") }),
+                        MonitorMediaFilterChoice(id.toString(), "SLOT ${index + 1}") },
+                        InstrumentationRegistry.getInstrumentation().targetContext),
                     hasActiveFilters = filters.activeCount > 0,
                     action = { filters = filters.applying(it, offered) }, close = { presented = false },
                 )
@@ -179,7 +180,8 @@ class NikonMediaFilterFormComposeTest {
         val offered = offered(listOf(clip(1, "A.MOV", 0, "", FIRST)))
         composeRule.setContent {
             FilterFixtureHost {
-                MonitorMediaGalleryFilterDialog(nikonGalleryFilters(MediaLibraryFilters(), offered, emptyList()),
+                MonitorMediaGalleryFilterDialog(nikonGalleryFilters(MediaLibraryFilters(), offered, emptyList(),
+                    InstrumentationRegistry.getInstrumentation().targetContext),
                     hasActiveFilters = false, action = {}, close = {})
             }
         }

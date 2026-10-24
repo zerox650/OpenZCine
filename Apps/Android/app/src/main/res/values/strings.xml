@@ -1142,4 +1142,23 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="media_browse_listing_camera">Listing clips on camera…</string>
     <string name="media_browse_checking_cache">Checking persisted complete cache entries…</string>
     <string name="media_browse_opening_local">Opening local library…</string>
+    <string name="media_camera_size_unknown">Camera did not provide the %1$s size.</string>
+    <string name="media_transfer_cache_retired">Delivery cache source retired.</string>
+    <string name="media_cache_write_failed">Media cache write failed.</string>
+    <string name="still_preview_loading_progressive">Loading full %1$s preview…</string>
+    <string name="still_preview_downloading_complete">Downloading %1$s image…</string>
+    <string name="still_preview_downloading_file">Downloading %1$s file…</string>
+    <string name="still_preview_decoder_unavailable_file">%1$s files are not decoded for a full preview on Android.</string>
+    <string name="still_preview_decoder_unavailable_image">This %1$s image could not be decoded for a full preview on this Android device.</string>
+    <string name="still_preview_thumbnail_shown">Showing the camera thumbnail.</string>
+    <string name="still_preview_no_thumbnail">The camera did not provide a thumbnail.</string>
+    <string name="still_preview_transfer_failed">Camera image transfer failed.</string>
+    <string name="still_preview_transfer_cancelled">Camera image transfer was cancelled.</string>
+    <string name="gyro_share_not_finalized">This gyro log is not finalized.</string>
+    <string name="gyro_share_directory_missing">Missing share directory.</string>
+    <string name="gyro_share_publish_failed">Could not publish the gyro share copy.</string>
+    <string name="gyro_share_storage_failed">Could not create gyro share storage.</string>
+    <string name="media_date_window_today">TODAY</string>
+    <string name="media_date_window_7_days">7 DAYS</string>
+    <string name="media_date_window_30_days">30 DAYS</string>
 </resources>

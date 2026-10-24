@@ -577,7 +577,8 @@ internal fun MediaBrowseScreen(
                 sort = com.opencapture.opencine.vocabulary.MediaLibrarySort.valueOf(libraryState.sort.name),
                 activeFilterCount = filters.activeCount,
                 filters = nikonGalleryFilters(filters, filterOptions,
-                    visibleStorageSlots.map { MonitorMediaFilterChoice(it.storageId.toString(), "SLOT ${it.slotNumber}") }),
+                    visibleStorageSlots.map { MonitorMediaFilterChoice(it.storageId.toString(), "SLOT ${it.slotNumber}") },
+                    context = context),
                 storage = mediaGalleryStorageValues(visibleStorageSlots, filters.storageId),
                 empty = when (val load = state) {
                     BrowseState.Loading -> MonitorMediaGalleryEmpty(
@@ -794,10 +795,10 @@ internal fun MediaBrowseScreen(
 
 /** The Nikon filter facts as the shared form's values; storage chips are the inserted card slots. */
 internal fun nikonGalleryFilters(filters: MediaLibraryFilters, options: MediaFilterOptions,
-    storage: List<MonitorMediaFilterChoice>): MonitorMediaGalleryFilters = MonitorMediaGalleryFilters(
+    storage: List<MonitorMediaFilterChoice>, context: Context): MonitorMediaGalleryFilters = MonitorMediaGalleryFilters(
     formats = options.formats.map { it.title }, resolutions = options.resolutions.map { it.title },
     photoSizes = options.photoSizes.map { MonitorMediaFilterChoice(it.name, it.title) },
-    dateWindows = options.dateWindows.map { MonitorMediaFilterChoice(it.name, it.title) },
+    dateWindows = options.dateWindows.map { MonitorMediaFilterChoice(it.name, context.getString(it.labelRes)) },
     storage = storage,
     formatSelection = filters.formats.mapTo(linkedSetOf()) { it.title },
     resolutionSelection = filters.resolutions.mapTo(linkedSetOf()) { it.title },

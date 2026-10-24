@@ -86,7 +86,7 @@ internal class NikonMediaDelivery(
         val bakeable = selection.any { it.clip.contentKind == NikonMediaContentKind.PLAYABLE_PROXY }
         val originals = NikonDeliveryOriginals(selection, cacheStore, connectionOwner != null,
             SwiftCoreMediaObjectTransferBridge(connectionOwner, appContext), MonitorDeliveryAdmission(capture::contentCurrent),
-            acquisition = MonitorDeliveryAdmission(capture::nativeCurrent))
+            acquisition = MonitorDeliveryAdmission(capture::nativeCurrent), context = appContext)
         val source = MonitorDeliverySource<MediaDeliverySelection, Unit, MonitorMovieExportContainer>(originals.service,
             prepare = { record, configuration, report ->
                 // Stills and camera masters are delivered unchanged; only a video proxy takes the look.
