@@ -923,4 +923,34 @@
     <!-- 陀螺仪日志列表操作（GyroLogsScreen） -->
     <string name="gyro_logs_share">分享</string>
     <string name="gyro_logs_delete">删除</string>
+
+    <!-- RED LUT 下载流程（RedLutDownloadScreen / RedLutDelivery） -->
+    <string name="red_net_available">网络可用，可执行经过授权的 RED 工作流程。</string>
+    <string name="red_net_camera_ap">下载 RED LUT 前请先连接互联网——相机 Wi-Fi 接入点没有网络连接。</string>
+    <string name="red_net_no_internet">下载 RED LUT 前请先连接互联网——当前没有可用的网络路径。</string>
+    <string name="red_net_swift_unavailable">此版本中共享的 RED 网络策略不可用。</string>
+    <string name="red_download_unconfigured">RED 下载未在 Android 上配置。启用下载需要经过授权的 HTTPS 端点、RED 条款版本以及操作员确认流程。</string>
+    <string name="red_no_hop">OpenZCine 无法从此界面离开相机 Wi-Fi。请在家用 Wi-Fi 下从“你的相机”重新连接后再下载 RED LUTs。</string>
+    <string name="red_hop_failed">OpenZCine 无法离开相机 Wi-Fi 以获取互联网路由。</string>
+    <string name="red_hop_unavailable">OpenZCine 无法自动切离此相机连接。</string>
+    <string name="red_outcome_not_archive">RED 的下载不是可读取的 zip 压缩包。请重试。</string>
+    <string name="red_outcome_archive_error">无法打开 RED 的压缩包（%1$s）。请重试。</string>
+    <string name="red_outcome_no_cubes">已下载 RED 的文件，但其中不包含任何 .cube LUT。</string>
+    <string name="red_outcome_rejected">在 RED 的压缩包中找到 %1$d 个 LUT，但均无法通过校验。请重试；若共享引擎不可用，请重新安装。</string>
+    <string name="red_outcome_unreadable">已下载 RED 的文件，但无法从中读取任何 LUT。</string>
+    <string name="red_copy_intro">RED 免费提供 IPP2 Output Presets，但您必须在 RED 官网上接受其条款。</string>
+    <string name="red_copy_intro_detail">我们将打开 RED 的真实下载页面。请在那里接受条款，然后开始下载——LUT 随后会自动导入。</string>
+    <string name="red_copy_continue">继续前往 RED 页面</string>
+    <string name="red_copy_hop_ready">我们会先切离相机的 Wi-Fi 以下载，然后自动重新连接你的相机。</string>
+    <string name="red_copy_hop_unavailable">自动跳转需要已保存的相机接入点资料及其 Wi-Fi 密钥。请在配对后通过相机接入点连接，或离开 Wi-Fi 后从家用网络打开 RED。</string>
+    <string name="red_copy_downloading">正在从 RED 下载…</string>
+    <string name="red_copy_success_one">已添加 1 个 RED LUT</string>
+    <string name="red_copy_success_other">已添加 %1$d 个 RED LUT</string>
+    <string name="red_copy_success_detail">可在 LUT 选择器的 RED 标签页中找到它们。</string>
+    <string name="red_copy_unexpected_site">RED 的下载来自意外网站，已被阻止。</string>
+    <string name="red_copy_no_file">RED 的下载未产生文件。请重试。</string>
+    <string name="red_copy_page_failed">RED 的页面加载失败。请检查你的网络连接后重试。</string>
+    <string name="red_copy_http_failure">RED 返回 HTTP %1$d。请重试。</string>
+    <string name="red_copy_web_page">RED 返回的是网页而非 LUT 压缩包。请重新接受条款并重试。</string>
+    <string name="red_copy_not_archive">RED 的下载不是 zip 压缩包。请重试。</string>
 </resources>

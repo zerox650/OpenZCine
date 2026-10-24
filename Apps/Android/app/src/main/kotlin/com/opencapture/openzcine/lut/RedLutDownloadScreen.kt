@@ -1,5 +1,6 @@
 package com.opencapture.openzcine.lut
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -41,26 +42,27 @@ internal fun RedLutDownloadScreen(
     val context = LocalContext.current
     val gate = remember(context) { RedLutDownloadGate(context.applicationContext) }
     val staging = remember(context) { File(context.applicationContext.noBackupFilesDir, "red-lut-import-staging") }
+    val pack = remember(context) { redLutPack(context) }
     MonitorLutPackDownloadScreen(
-        source = RED_LUT_PACK,
-        readiness = { gate.readiness().network.packReadiness() },
-        hop = frameioController?.let(::RedLutPackHop),
-        noHopMessage = "OpenZCine can't leave the camera Wi‑Fi from this surface. Reconnect from Your cameras on " +
-            "home Wi‑Fi to download RED LUTs.",
-        hopFailedMessage = "OpenZCine couldn't leave the camera Wi‑Fi for an internet route.",
+        source = pack,
+        readiness = { gate.readiness().network.packReadiness(context) },
+        hop = frameioController?.let { RedLutPackHop(it, context) },
+        noHopMessage = context.getString(R.string.red_no_hop),
+        hopFailedMessage = context.getString(R.string.red_hop_failed),
         closeLabel = stringResource(R.string.action_close),
-        importPack = { file -> lutLibrary.importPack(StoredLutCategory.RED, file, staging).redOutcome() },
+        importPack = { file -> lutLibrary.importPack(StoredLutCategory.RED, file, staging).redOutcome(context) },
         onClose = onClose,
         onImported = onImported,
     )
 }
 
 /** The Frame.io controller's camera access point hop, as the pack flow asks for it. */
-private class RedLutPackHop(private val controller: FrameioDeliveryController) : MonitorLutPackInternetHop {
+private class RedLutPackHop(private val controller: FrameioDeliveryController, private val context: Context) :
+    MonitorLutPackInternetHop {
     override val ready: Boolean get() = controller.cameraHopAvailability == FrameioHopAvailability.READY
     override val unavailableMessage: String
         get() = controller.cameraHopAvailability.operatorMessage
-            .ifBlank { "OpenZCine can't hop off this camera connection automatically." }
+            .ifBlank { context.getString(R.string.red_hop_unavailable) }
     override val switching: Boolean
         get() = controller.internetHopState is FrameioInternetHopState.LeavingCamera ||
             controller.internetHopState is FrameioInternetHopState.WaitingForInternet
@@ -70,28 +72,28 @@ private class RedLutPackHop(private val controller: FrameioDeliveryController) :
     override fun endAfterDismiss() = controller.endInternetHopAfterDismiss()
 }
 
-internal fun RedLutNetworkAvailability.packReadiness(): MonitorLutPackReadiness = MonitorLutPackReadiness(
+internal fun RedLutNetworkAvailability.packReadiness(context: Context): MonitorLutPackReadiness = MonitorLutPackReadiness(
     when (this) {
         RedLutNetworkAvailability.AVAILABLE -> MonitorLutPackNetwork.AVAILABLE
         RedLutNetworkAvailability.ON_CAMERA_ACCESS_POINT -> MonitorLutPackNetwork.ON_CAMERA_ACCESS_POINT
         RedLutNetworkAvailability.NO_INTERNET -> MonitorLutPackNetwork.NO_INTERNET
         RedLutNetworkAvailability.SWIFT_CORE_UNAVAILABLE -> MonitorLutPackNetwork.POLICY_UNAVAILABLE
     },
-    operatorMessage,
+    context.getString(operatorMessageRes),
 )
 
 /** RED's words for what the import made of the download. */
-internal fun MonitorLutPackImportResult.redOutcome(): MonitorLutPackOutcome = when {
+internal fun MonitorLutPackImportResult.redOutcome(context: Context): MonitorLutPackOutcome = when {
     importedCount > 0 -> MonitorLutPackOutcome.Imported(importedCount)
-    notAnArchive -> MonitorLutPackOutcome.Failed("RED's download was not a readable zip archive. Please try again.")
-    archiveError != null -> MonitorLutPackOutcome.Failed("Couldn't open RED's archive ($archiveError). Please try again.")
-    foundCubeEntries == 0 -> MonitorLutPackOutcome.Failed("We downloaded RED's file but it didn't contain any .cube LUTs.")
-    rejectedCubeEntries > 0 -> MonitorLutPackOutcome.Failed("We found $foundCubeEntries LUT(s) in RED's archive, but none " +
-        "could be validated. Try again, or reinstall if the shared engine is unavailable.")
-    else -> MonitorLutPackOutcome.Failed("We downloaded RED's file but couldn't read any LUTs from it.")
+    notAnArchive -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_not_archive))
+    archiveError != null -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_archive_error, archiveError))
+    foundCubeEntries == 0 -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_no_cubes))
+    rejectedCubeEntries > 0 -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_rejected, foundCubeEntries))
+    else -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_unreadable))
 }
 
-internal val RED_LUT_PACK: MonitorLutPackSource = MonitorLutPackSource(
+/** Builds the RED pack source with copy resolved in the operator's language. */
+internal fun redLutPack(context: Context): MonitorLutPackSource = MonitorLutPackSource(
     pageUrl = RED_IPP2_PRESETS_URL,
     archiveFileName = "red-ipp2-presets.zip",
     isAllowedDownload = ::isAllowedRedDownloadUrl,
@@ -100,22 +102,23 @@ internal val RED_LUT_PACK: MonitorLutPackSource = MonitorLutPackSource(
     loadingScript = RED_LOADING_JS,
     helperScript = RED_HELPER_JS,
     copy = MonitorLutPackCopy(
-        intro = "RED provides its IPP2 Output Presets for free, but you must accept RED's terms on RED's own site.",
-        introDetail = "We'll open RED's real download page. Accept their terms there, then start the download — " +
-            "we'll import the LUTs automatically.",
-        continueLabel = "Continue to RED's page",
-        hopReady = "We'll hop off the camera's Wi‑Fi to download, then reconnect your camera automatically.",
-        hopUnavailable = "Automatic hop needs a saved camera access-point profile with its Wi‑Fi key. Connect over " +
-            "the camera AP after pairing, or leave Wi‑Fi and open RED from home internet.",
-        downloading = "Downloading from RED…",
-        success = { count -> if (count == 1) "1 RED LUT added" else "$count RED LUTs added" },
-        successDetail = "Find them under the RED tab in the LUT picker.",
-        unexpectedSite = "RED's download came from an unexpected site and was blocked.",
-        noFile = "RED's download produced no file. Please try again.",
-        pageFailed = "RED's page didn't load. Check your internet connection and try again.",
-        httpFailure = { code -> "RED returned HTTP $code. Please try again." },
-        webPageInsteadOfArchive = "RED returned a web page instead of the LUT archive. Accept the terms again and retry.",
-        notAnArchive = "RED's download was not a zip archive. Please try again.",
+        intro = context.getString(R.string.red_copy_intro),
+        introDetail = context.getString(R.string.red_copy_intro_detail),
+        continueLabel = context.getString(R.string.red_copy_continue),
+        hopReady = context.getString(R.string.red_copy_hop_ready),
+        hopUnavailable = context.getString(R.string.red_copy_hop_unavailable),
+        downloading = context.getString(R.string.red_copy_downloading),
+        success = { count ->
+            if (count == 1) context.getString(R.string.red_copy_success_one)
+            else context.getString(R.string.red_copy_success_other, count)
+        },
+        successDetail = context.getString(R.string.red_copy_success_detail),
+        unexpectedSite = context.getString(R.string.red_copy_unexpected_site),
+        noFile = context.getString(R.string.red_copy_no_file),
+        pageFailed = context.getString(R.string.red_copy_page_failed),
+        httpFailure = { code -> context.getString(R.string.red_copy_http_failure, code) },
+        webPageInsteadOfArchive = context.getString(R.string.red_copy_web_page),
+        notAnArchive = context.getString(R.string.red_copy_not_archive),
     ),
 )
 
