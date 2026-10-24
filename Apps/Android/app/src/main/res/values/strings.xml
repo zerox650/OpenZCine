@@ -1182,4 +1182,7 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="gyro_recovery_failed">The partial gyro log could not be recovered.</string>
     <string name="gyro_finish_failed">Could not finish the gyro log.</string>
     <string name="gyro_metadata_save_failed">Could not save gyro metadata.</string>
+    <string name="gyro_gravity_start_failed">Could not start phone gravity.</string>
+    <string name="gyro_sensor_start_failed">Could not start the gyroscope.</string>
+    <string name="gyro_core_rejected">Gyro core did not accept the operation.</string>
 </resources>

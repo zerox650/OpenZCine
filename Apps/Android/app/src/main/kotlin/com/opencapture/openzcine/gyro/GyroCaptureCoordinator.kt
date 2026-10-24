@@ -18,6 +18,7 @@ import com.opencapture.opencine.nikon.SwiftCoreCameraSession
 import com.opencapture.opencine.nikon.SwiftCoreLiveFrameSource
 import com.opencapture.opencine.nikon.metadataOnly
 import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import com.opencapture.openzcine.bridge.SwiftCore
 import com.opencapture.monitorui.MonitorTiltVector
 import com.opencapture.monitorui.MonitorDeviceTiltMath
@@ -261,7 +262,7 @@ internal class GyroCaptureCoordinator(private val context: Context, private val 
             val listener = calibrationSensorListener(generation, gravity == null)
             calibrationListener = listener
             check(sensorManager?.registerListener(listener, tiltSensor, 50_000, Handler(thread.looper)) == true)
-                { "Could not start phone gravity." }
+                { lstr(context, R.string.gyro_gravity_start_failed) }
             publishCalibration()
         } catch (error: Exception) { failCalibration(error) }
     } }
@@ -379,7 +380,7 @@ internal class GyroCaptureCoordinator(private val context: Context, private val 
             val thread = HandlerThread("OpenZCineGyro").also { it.start() }
             sensorThread = thread
             if (sensorManager?.registerListener(activeListener, sensor, 10_000, Handler(thread.looper)) != true) {
-                throw IllegalStateException("Could not start the gyroscope.")
+                throw IllegalStateException(lstr(context, R.string.gyro_sensor_start_failed))
             }
             mutableState.value = mutableState.value.copy(
                 status = context.getString(R.string.gyro_status_starting),
@@ -466,7 +467,7 @@ internal class GyroCaptureCoordinator(private val context: Context, private val 
     }
 
     private fun apply(payload: String?) {
-        val reply = JSONObject(payload ?: throw IllegalStateException("Gyro core did not accept the operation."))
+        val reply = JSONObject(payload ?: throw IllegalStateException(lstr(context, R.string.gyro_core_rejected)))
         store.apply(reply)
         val updates = reply.getJSONArray("updates")
         var changed = false

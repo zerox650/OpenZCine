@@ -203,6 +203,9 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.gyro_recovery_failed to "The partial gyro log could not be recovered.",
     R.string.gyro_finish_failed to "Could not finish the gyro log.",
     R.string.gyro_metadata_save_failed to "Could not save gyro metadata.",
+    R.string.gyro_gravity_start_failed to "Could not start phone gravity.",
+    R.string.gyro_sensor_start_failed to "Could not start the gyroscope.",
+    R.string.gyro_core_rejected to "Gyro core did not accept the operation.",
 )
 
 /**

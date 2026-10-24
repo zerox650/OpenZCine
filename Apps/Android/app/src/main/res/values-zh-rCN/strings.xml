@@ -1182,4 +1182,7 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="gyro_recovery_failed">该不完整的陀螺仪日志无法恢复。</string>
     <string name="gyro_finish_failed">无法完成该陀螺仪日志。</string>
     <string name="gyro_metadata_save_failed">无法保存陀螺仪日志元数据。</string>
+    <string name="gyro_gravity_start_failed">无法启动手机的重力传感器。</string>
+    <string name="gyro_sensor_start_failed">无法启动陀螺仪。</string>
+    <string name="gyro_core_rejected">陀螺仪核心未接受该操作。</string>
 </resources>
