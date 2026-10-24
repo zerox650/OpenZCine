@@ -259,6 +259,7 @@ public fun realPairingEnvironment(
                 source = usbCameraSource,
                 connectionStrategy = PtpIpConnectionStrategy.RESTORE_PROFILE_THEN_PAIRING,
                 phaseLogger = combinedPhaseLogger,
+                context = context,
             )
         },
         createSavedProfileUsbSession = { opened ->
@@ -267,6 +268,7 @@ public fun realPairingEnvironment(
                 source = usbCameraSource,
                 connectionStrategy = PtpIpConnectionStrategy.SAVED_PROFILE,
                 phaseLogger = combinedPhaseLogger,
+                context = context,
             )
         },
         createFirstTimePairingUsbSession = { opened ->
@@ -275,6 +277,7 @@ public fun realPairingEnvironment(
                 source = usbCameraSource,
                 connectionStrategy = PtpIpConnectionStrategy.RESTORE_PROFILE_THEN_PAIRING,
                 phaseLogger = combinedPhaseLogger,
+                context = context,
             )
         },
         credentials = CameraWifiCredentialStore(context),
@@ -291,6 +294,7 @@ private fun usbCameraSession(
     source: UsbPtpCameraSource,
     connectionStrategy: PtpIpConnectionStrategy,
     phaseLogger: (String, String) -> Unit,
+    context: Context,
 ): SwiftCoreCameraSession =
     SwiftCoreCameraSession(
         host = opened.hostKey,
@@ -299,7 +303,7 @@ private fun usbCameraSession(
         connectionStrategy = connectionStrategy,
         usbReopener =
             UsbPtpTransportReopener {
-                reopenReadyUsbTransport(source, opened.hostKey)
+                reopenReadyUsbTransport(source, opened.hostKey, context)
             },
         phaseLogger = phaseLogger,
     )

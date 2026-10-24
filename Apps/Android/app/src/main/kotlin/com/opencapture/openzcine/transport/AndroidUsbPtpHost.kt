@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.opencapture.opencine.nikon.UsbPtpOpenResult
 import com.opencapture.opencine.nikon.UsbPtpTransport
+import com.opencapture.openzcine.R
 
 /** Current access state for a compatible USB PTP camera. */
 public enum class UsbPtpCameraAccess {
@@ -67,13 +68,14 @@ public data class UsbPtpCamera(
 internal fun reopenReadyUsbTransport(
     source: UsbPtpCameraSource,
     hostKey: String,
+    context: Context,
 ): UsbPtpOpenResult {
     val camera =
         source.cameras.value.firstOrNull { candidate ->
             candidate.access == UsbPtpCameraAccess.READY && candidate.hostKey == hostKey
         }
             ?: return UsbPtpOpenResult.Rejected(
-                message = "Connect your USB-C camera and approve access, then try again.",
+                message = context.getString(R.string.usb_reconnect_not_ready),
                 diagnosticPhase = "usb.reconnect.notReady",
             )
     return source.open(camera)
@@ -202,45 +204,45 @@ public class AndroidUsbPtpCameraSource(
     override fun open(camera: UsbPtpCamera): UsbPtpOpenResult {
         val device = usbManager.deviceList[camera.token]
             ?: return rejectOpen(
-                "The USB-C camera is no longer attached. Reconnect the cable and try again.",
+                appContext.getString(R.string.usb_open_detached),
                 "usb.open.detached",
             )
         val attachmentLease =
             synchronized(lifecycleLock) {
                 if (closed) {
                     return rejectOpen(
-                        "USB camera discovery is no longer active.",
+                        appContext.getString(R.string.usb_open_discovery_inactive),
                         "usb.open.detached",
                     )
                 }
                 attachmentState.captureOpenLease(device.deviceName)
             }
                 ?: return rejectOpen(
-                    "The USB-C camera is no longer attached. Reconnect the cable and try again.",
+                    appContext.getString(R.string.usb_open_detached),
                     "usb.open.detached",
                 )
         if (!usbManager.hasPermission(device)) {
             return rejectOpen(
-                "Allow USB access for this camera, then try connecting again.",
+                appContext.getString(R.string.usb_open_no_permission),
                 "usb.open.noPermission",
             )
         }
         val selection = descriptorSelection(device)
             ?: return rejectOpen(
-                "This USB device does not expose the complete PTP camera interface OpenZCine needs.",
+                appContext.getString(R.string.usb_open_no_ptp_interface),
                 "usb.open.noPtpInterface",
             )
         val hostKey = stableHostKey(device)
         val connection = usbManager.openDevice(device)
             ?: return rejectOpen(
-                "Android could not open this USB camera. Disconnect it, approve access again, and retry.",
+                appContext.getString(R.string.usb_open_device),
                 "usb.open.device",
             )
         val usbInterface = device.getInterface(selection.interfaceIndex)
         if (!connection.claimInterface(usbInterface, true)) {
             connection.close()
             return rejectOpen(
-                "Android could not claim the camera's PTP USB interface. Close other camera apps and retry.",
+                appContext.getString(R.string.usb_open_claim),
                 "usb.open.claim",
             )
         }
@@ -259,7 +261,7 @@ public class AndroidUsbPtpCameraSource(
             connection.close()
             eventRequest.close()
             return rejectOpen(
-                "Android could not open the camera's PTP event endpoint. Reconnect the cable and retry.",
+                appContext.getString(R.string.usb_open_event_endpoint),
                 "usb.open.eventEndpoint",
             )
         }
@@ -297,7 +299,7 @@ public class AndroidUsbPtpCameraSource(
         if (rejectOpenedTransport) {
             transport.close()
             return rejectOpen(
-                "The USB-C camera changed while Android opened it. Reconnect the cable and try again.",
+                appContext.getString(R.string.usb_open_changed),
                 "usb.open.changed",
             )
         }
@@ -489,7 +491,8 @@ public class AndroidUsbPtpCameraSource(
     private fun displayName(device: UsbDevice): String {
         val product = runCatching { device.productName?.trim() }.getOrNull()
         if (!product.isNullOrEmpty()) return product
-        return if (device.vendorId == NIKON_VENDOR_ID) "Nikon USB camera" else "USB PTP camera"
+        return if (device.vendorId == NIKON_VENDOR_ID) appContext.getString(R.string.usb_device_nikon)
+            else appContext.getString(R.string.usb_device_ptp)
     }
 
     private fun rejectOpen(message: String, diagnosticPhase: String): UsbPtpOpenResult.Rejected {

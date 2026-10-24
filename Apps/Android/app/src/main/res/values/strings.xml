@@ -1000,4 +1000,15 @@
     <string name="settings_zebra_units_help">Switch between native 0-255 codes and the normalized 0-100 monitoring IRE scale.</string>
     <string name="settings_zebra_highlight_help">High zebra warns when bright detail approaches clipping after curve compensation.</string>
     <string name="settings_zebra_midtone_help">Midtone zebra marks the chosen monitoring level after curve compensation.</string>
+    <string name="usb_reconnect_not_ready">Connect your USB-C camera and approve access, then try again.</string>
+    <string name="usb_open_detached">The USB-C camera is no longer attached. Reconnect the cable and try again.</string>
+    <string name="usb_open_discovery_inactive">USB camera discovery is no longer active.</string>
+    <string name="usb_open_no_permission">Allow USB access for this camera, then try connecting again.</string>
+    <string name="usb_open_no_ptp_interface">This USB device does not expose the complete PTP camera interface OpenZCine needs.</string>
+    <string name="usb_open_device">Android could not open this USB camera. Disconnect it, approve access again, and retry.</string>
+    <string name="usb_open_claim">Android could not claim the camera\'s PTP USB interface. Close other camera apps and retry.</string>
+    <string name="usb_open_event_endpoint">Android could not open the camera\'s PTP event endpoint. Reconnect the cable and retry.</string>
+    <string name="usb_open_changed">The USB-C camera changed while Android opened it. Reconnect the cable and try again.</string>
+    <string name="usb_device_nikon">Nikon USB camera</string>
+    <string name="usb_device_ptp">USB PTP camera</string>
 </resources>

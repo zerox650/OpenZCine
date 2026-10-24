@@ -1000,4 +1000,15 @@
     <string name="settings_zebra_units_help">在原生的 0-255 码值与归一化的 0-100 监看 IRE 刻度之间切换。</string>
     <string name="settings_zebra_highlight_help">高亮班马纹在曲线补偿后亮部细节接近削波时发出警告。</string>
     <string name="settings_zebra_midtone_help">中间调班马纹标出曲线补偿后选定的监看电平。</string>
+    <string name="usb_reconnect_not_ready">连接 USB-C 相机并批准访问，然后重试。</string>
+    <string name="usb_open_detached">USB-C 相机已断开。重新连接线缆后重试。</string>
+    <string name="usb_open_discovery_inactive">USB 相机发现功能已停止。</string>
+    <string name="usb_open_no_permission">允许此相机使用 USB 访问，然后重新连接。</string>
+    <string name="usb_open_no_ptp_interface">此 USB 设备未提供 OpenZCine 所需的完整 PTP 相机接口。</string>
+    <string name="usb_open_device">Android 无法打开此 USB 相机。断开连接，重新批准访问后重试。</string>
+    <string name="usb_open_claim">Android 无法占用相机的 PTP USB 接口。关闭其他相机应用后重试。</string>
+    <string name="usb_open_event_endpoint">Android 无法打开相机的 PTP 事件端点。重新连接线缆后重试。</string>
+    <string name="usb_open_changed">Android 打开相机时 USB-C 相机发生变更。重新连接线缆后重试。</string>
+    <string name="usb_device_nikon">尼康 USB 相机</string>
+    <string name="usb_device_ptp">USB PTP 相机</string>
 </resources>
