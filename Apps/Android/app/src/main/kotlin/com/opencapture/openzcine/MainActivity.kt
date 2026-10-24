@@ -49,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -508,12 +509,15 @@ class MainActivity : ComponentActivity() {
                             commonServices = shellSessions::services,
                         )
                     }
+                // Hoisted out of remember(): LocalContext.current is @Composable and the
+                // remember lambda is @DisallowComposableCalls.
+                val nikonContext = LocalContext.current
                 val camerasModel =
                     remember(nikonPort) {
                         CamerasModel(
                             listOf(
                                 AppIntegration(
-                                    NikonIntegration(nikonPort),
+                                    NikonIntegration(nikonPort, nikonContext),
                                     nikonIntegrationSlots(
                                         savedCameraConnector,
                                         { savedCameras },
