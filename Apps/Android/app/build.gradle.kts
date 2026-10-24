@@ -259,8 +259,47 @@ val stageSwiftCore = tasks.register<Exec>("stageSwiftCore") {
     )
 }
 
+// ── Windows host support ────────────────────────────────────────────────────
+// `stageSwiftCore` drives `swift build --swift-sdk aarch64-unknown-linux-android29`,
+// which only runs on a Linux/macOS host. Windows therefore cannot cross-compile the
+// Swift core. Instead we seed Gradle's jniLibs output from a cached copy that a
+// WSL/Linux build produced (Apps/Android/.swift-core/arm64-v8a, git-ignored), so a
+// Windows Android Studio build can package the same native closure.
+val isWindowsHost = System.getProperty("os.name").orEmpty().lowercase().contains("windows")
+val stagedSwiftCoreArm64Dir = swiftCoreArm64Directory.get().asFile
+val swiftCoreCacheDir = rootProject.projectDir.resolve(".swift-core/arm64-v8a")
+val swiftCoreCacheLib = File(swiftCoreCacheDir, "libOpenZCineAndroid.so")
+
+// Everything below is evaluated at configuration time: with `org.gradle.configuration-cache=true`
+// a task action (or a CopySpec closure) that closes over this build script's scope cannot be
+// serialized, so the guard is a plain configuration-time check and the Copy has no closures.
+val seedSwiftCoreFromCache = if (isWindowsHost) {
+    if (!swiftCoreCacheLib.isFile) {
+        throw GradleException(
+            "Windows build: no cached Swift core at $swiftCoreCacheDir.\n" +
+                "Swift cross-compilation requires a Linux/macOS host. Produce the .so with the WSL build:\n" +
+                "  bash /mnt/f/Open_source_project/wsl-openzcine-android.sh\n" +
+                "then copy app/build/generated/swiftCore/jniLibs/arm64-v8a/*.so\n" +
+                "into Apps/Android/.swift-core/arm64-v8a and rebuild.",
+        )
+    }
+    tasks.register<Copy>("seedSwiftCoreFromCache") {
+        group = "build"
+        description = "Windows: copy the cached Swift core .so into Gradle's jniLibs output."
+        // The cache directory holds exactly the staged .so closure plus native-libraries.txt.
+        from(swiftCoreCacheDir)
+        into(stagedSwiftCoreArm64Dir)
+    }
+} else {
+    null
+}
+
 tasks.named("preBuild").configure {
-    dependsOn(stageSwiftCore)
+    if (seedSwiftCoreFromCache != null) {
+        dependsOn(seedSwiftCoreFromCache)
+    } else {
+        dependsOn(stageSwiftCore)
+    }
     // Stage local demo clips before any debug asset/lint task reads the
     // generated assets directory (implicit-dependency hygiene).
     dependsOn(stageDebugDemoSamples)

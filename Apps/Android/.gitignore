@@ -2,6 +2,10 @@
 .kotlin/
 build/
 local.properties
+# Prebuilt Swift core .so set, seeded on Windows hosts from the WSL build.
+.swift-core/
+# Windows SDK path backup (restored after a WSL run rewrites local.properties).
+local.properties.windows
 # Android Adobe IMS / Frame.io public-client registration. The app deliberately
 # ships unconfigured without this local file; see docs/frameio-setup.md.
 frameio.local.properties

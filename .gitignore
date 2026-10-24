@@ -57,6 +57,7 @@ ios/xcodemake*.log
 # ── Supported agent tooling scratch space ─────────────────────────────────────
 .local/
 .codex/
+.workbuddy/
 
 # ── OS / editor junk ──────────────────────────────────────────────────────────
 .DS_Store
