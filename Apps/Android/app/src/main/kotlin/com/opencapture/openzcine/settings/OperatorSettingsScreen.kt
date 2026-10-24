@@ -275,10 +275,10 @@ internal fun OperatorSettingsScreen(
         else stringResource(R.string.settings_transport_active, activeTransportLabel ?: "Wi-Fi")
     val link = MonitorSettingsLinkSource(transportValue, stringResource(R.string.help_link_transport),
         when (state) {
-            is CameraSessionState.Connected -> "Connected"
-            CameraSessionState.Connecting -> "Connecting"
-            CameraSessionState.Disconnected -> "Disconnected"
-        }, "The current connection state reported by this device.",
+            is CameraSessionState.Connected -> stringResource(R.string.status_connected)
+            CameraSessionState.Connecting -> stringResource(R.string.status_connecting)
+            CameraSessionState.Disconnected -> stringResource(R.string.status_disconnected)
+        }, stringResource(R.string.help_link_connection_state),
         stringResource(R.string.settings_link_health), healthCaption, if (linked) health?.score else null,
         choices = listOf(
             MonitorSettingsChoiceSource(stringResource(R.string.settings_stream_preset),
@@ -328,7 +328,7 @@ internal fun OperatorSettingsScreen(
     val configuration = MonitorOperatorSettingsConfiguration("OpenZCine", linked, phase,
         closeOwned, onDisconnect?.let { disconnect -> { retainedAccount.retire(); disconnect() } }, emitHaptic, link,
         sharingSource(session, relaySharing, standalonePasscodes, settings, relaySharingEnabled, onRelayShareToggle, emitHaptic),
-        stringResource(R.string.settings_subtitle_sharing), "Broadcast & watchers", controls,
+        stringResource(R.string.settings_subtitle_sharing), stringResource(R.string.settings_sharing_rail), controls,
         cache = MonitorSettingsCachePresentation(cacheSource, formatBytes = { cacheSizeLabel(context, it) },
             checking = stringResource(R.string.status_calculating), readFailure = stringResource(R.string.cache_read_failed),
             clearFailure = stringResource(R.string.cache_clear_failed), scopeHelp = stringResource(R.string.help_storage_cache),
@@ -339,11 +339,12 @@ internal fun OperatorSettingsScreen(
             save = { if (!systemSettingsActions.shareDiagnostics()) toastUnavailable(context) },
             incidents = AppDiagnostics.incidents),
         legal = ZLegalDocuments,
-        information = MonitorSettingsInformationSource(stringResource(R.string.system_theme_charcoal), "PTP / PTP-IP",
+        information = MonitorSettingsInformationSource(stringResource(R.string.system_theme_charcoal),
+            stringResource(R.string.settings_info_protocol),
             appVersionText(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
-            "Charcoal field-monitor chrome with gold accents, tuned for low reflection on set.",
-            "Camera control speaks standard PTP over USB and PTP-IP over Wi-Fi.",
-            "Current OpenZCine build from the native project metadata."),
+            stringResource(R.string.settings_info_theme_help),
+            stringResource(R.string.settings_info_protocol_help),
+            stringResource(R.string.settings_info_version_help)),
         gyro = gyro,
     )
     // Seeds the session once per requested landing tab, before the first frame draws.
@@ -425,7 +426,7 @@ private fun supportSource(actions: SystemSettingsActions, onReportProblem: () ->
                 accessibilityLabel = stringResource(R.string.system_open_support), action = { runAction(actions::openSupport) }),
             MonitorSupportAction("support.feature", stringResource(R.string.system_request_feature), actionTitle = stringResource(R.string.action_request),
                 accessibilityLabel = stringResource(R.string.system_request_feature), action = { runAction(actions::requestFeature) }),
-        ), AndroidSupportLinks.SOURCE, "View the OpenZCine project and contribute on GitHub.", "Read the OpenZCine terms of use.")
+        ), AndroidSupportLinks.SOURCE, stringResource(R.string.help_support_github), stringResource(R.string.help_support_terms))
 }
 
 private fun toastUnavailable(context: Context) {

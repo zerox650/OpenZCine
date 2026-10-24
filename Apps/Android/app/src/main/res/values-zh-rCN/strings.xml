@@ -980,4 +980,24 @@
     <string name="multicam_lut_off">关</string>
     <string name="multicam_lut_selected">已选择</string>
     <string name="multicam_wb_auto">自动</string>
+    <string name="status_connecting">连接中</string>
+    <string name="status_disconnected">已断开连接</string>
+    <string name="help_link_connection_state">本设备报告的当前连接状态。</string>
+    <string name="settings_sharing_rail">广播与观看端</string>
+    <string name="settings_info_protocol">PTP / PTP-IP</string>
+    <string name="settings_info_theme_help">炭灰色现场监视器配色配金色点缀，针对片场低反光环境调校。</string>
+    <string name="settings_info_protocol_help">相机控制通过 USB 使用标准 PTP，通过 Wi-Fi 使用 PTP-IP。</string>
+    <string name="settings_info_version_help">来自原生项目元数据的当前 OpenZCine 版本。</string>
+    <string name="help_support_github">查看 OpenZCine 项目并在 GitHub 上参与贡献。</string>
+    <string name="help_support_terms">阅读 OpenZCine 使用条款。</string>
+    <string name="settings_peaking_sensitivity_help">更高的灵敏度能捕捉更细的边缘，但在细节丰富的场景中可能产生噪点。</string>
+    <string name="settings_peaking_color_help">选择在常见场景中仍清晰可辨的边缘颜色。</string>
+    <string name="settings_histogram_compensation_help">红绿灯亮起前的死黑/过曝容限档数。与立柱式测光表共用。</string>
+    <string name="settings_lights_compensation_help">通道指示灯亮起前的死黑/过曝容限档数。与直方图红绿灯共用。</string>
+    <string name="settings_false_color_scale_help">CineStop 以 18% 灰为基准标定曝光。Video 与 IRE 读取监视器信号。Limits 绘制暗部与亮部警告。源曲线与削波标定由相机提供。</string>
+    <string name="settings_false_color_read_help">LOG 读取源信号。709 读取内置 Rec.709 监视器风格，与所选创作 LUT 无关。</string>
+    <string name="settings_false_color_reference_help">伪色彩启用时，在实时取景画面上显示紧凑色标。</string>
+    <string name="settings_zebra_units_help">在原生的 0-255 码值与归一化的 0-100 监看 IRE 刻度之间切换。</string>
+    <string name="settings_zebra_highlight_help">高亮班马纹在曲线补偿后亮部细节接近削波时发出警告。</string>
+    <string name="settings_zebra_midtone_help">中间调班马纹标出曲线补偿后选定的监看电平。</string>
 </resources>

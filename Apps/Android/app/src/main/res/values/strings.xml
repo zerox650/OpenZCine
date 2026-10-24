@@ -980,4 +980,24 @@
     <string name="multicam_lut_off">Off</string>
     <string name="multicam_lut_selected">Selected</string>
     <string name="multicam_wb_auto">Auto</string>
+    <string name="status_connecting">Connecting</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="help_link_connection_state">The current connection state reported by this device.</string>
+    <string name="settings_sharing_rail">Broadcast &amp; watchers</string>
+    <string name="settings_info_protocol">PTP / PTP-IP</string>
+    <string name="settings_info_theme_help">Charcoal field-monitor chrome with gold accents, tuned for low reflection on set.</string>
+    <string name="settings_info_protocol_help">Camera control speaks standard PTP over USB and PTP-IP over Wi-Fi.</string>
+    <string name="settings_info_version_help">Current OpenZCine build from the native project metadata.</string>
+    <string name="help_support_github">View the OpenZCine project and contribute on GitHub.</string>
+    <string name="help_support_terms">Read the OpenZCine terms of use.</string>
+    <string name="settings_peaking_sensitivity_help">Higher sensitivity catches finer edges but can get noisy on detailed scenes.</string>
+    <string name="settings_peaking_color_help">Choose the edge color that stays readable over your typical scene.</string>
+    <string name="settings_histogram_compensation_help">Stops of crush/clip tolerance before a traffic light glows. Shared with the goal-post meter.</string>
+    <string name="settings_lights_compensation_help">Stops of crush/clip tolerance before a channel indicator glows. Shared with histogram traffic lights.</string>
+    <string name="settings_false_color_scale_help">CineStop marks exposure relative to 18% gray. Video and IRE read the monitor signal. Limits paints shadow and highlight warnings. The camera supplies the source curve and clip calibration.</string>
+    <string name="settings_false_color_read_help">LOG reads the source signal. 709 reads the built-in Rec.709 monitor look, independently of the selected creative LUT.</string>
+    <string name="settings_false_color_reference_help">Show a compact color key over live view while False Color is active.</string>
+    <string name="settings_zebra_units_help">Switch between native 0-255 codes and the normalized 0-100 monitoring IRE scale.</string>
+    <string name="settings_zebra_highlight_help">High zebra warns when bright detail approaches clipping after curve compensation.</string>
+    <string name="settings_zebra_midtone_help">Midtone zebra marks the chosen monitoring level after curve compensation.</string>
 </resources>

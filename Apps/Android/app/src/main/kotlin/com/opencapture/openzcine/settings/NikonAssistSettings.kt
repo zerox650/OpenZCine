@@ -78,8 +78,8 @@ internal fun nikonAssistSection(
         MonitorAssistTool.ZEBRA -> if (nikonImageProcessingAvailable) zebra(state, cameraInput, onInteraction) else null
         MonitorAssistTool.PEAK -> if (!nikonImageProcessingAvailable) null else MonitorAssistSettingsSection.Peaking(
             state.peakingSensitivity, state.peakingColor, SettingsPalette.peaking,
-            "Higher sensitivity catches finer edges but can get noisy on detailed scenes.",
-            "Choose the edge color that stays readable over your typical scene.",
+            stringResource(R.string.settings_peaking_sensitivity_help),
+            stringResource(R.string.settings_peaking_color_help),
             onSensitivity = { state.setPeaking(sense = it); onInteraction() }, onColor = { state.setPeaking(color = it); onInteraction() },
             reset = { state.resetSettings(tool); onInteraction() })
         MonitorAssistTool.WAVE -> MonitorAssistSettingsSection.Trace.waveform(
@@ -95,8 +95,8 @@ internal fun nikonAssistSection(
         MonitorAssistTool.HISTO -> MonitorAssistSettingsSection.Histogram(
             state.histoTrafficLights, { state.setHistogram(traffic = !state.histoTrafficLights); onInteraction() },
             state.crushClipCompensation, { state.setHistogram(compensation = it); onInteraction() },
-            "Show small RGB edge blocks for crushed and clipped channels.",
-            "Stops of crush/clip tolerance before a traffic light glows. Shared with the goal-post meter.",
+            stringResource(R.string.settings_histogram_traffic_caption),
+            stringResource(R.string.settings_histogram_compensation_help),
             reset = { state.resetSettings(tool); onInteraction() })
         MonitorAssistTool.VECTOR -> MonitorAssistSettingsSection.Vectorscope(
             state.vectorZoom, { state.setVectorscope(zoom = it); onInteraction() },
@@ -104,7 +104,7 @@ internal fun nikonAssistSection(
             reset = { state.resetSettings(tool); onInteraction() })
         MonitorAssistTool.LIGHTS -> MonitorAssistSettingsSection.TrafficLights(
             state.crushClipCompensation, { state.setCompensation(it); onInteraction() },
-            "Stops of crush/clip tolerance before a channel indicator glows. Shared with histogram traffic lights.",
+            stringResource(R.string.settings_lights_compensation_help),
             reset = { state.resetSettings(tool); onInteraction() })
         else -> null
     }
@@ -123,9 +123,9 @@ private fun falseColor(state: MonitorAssistState, cameraInput: ExposureAssistCam
         { state.setFalseColor(scale = it); onInteraction() }, { it.menuLabel },
         readChoice = MonitorFalseColorReadChoice(state.falseColorRec709) { state.setFalseColorRead(it); onInteraction() }, reference = reference, referenceEnabled = state.falseColorReference,
         onReferenceEnabled = { state.setFalseColor(reference = it); onInteraction() },
-        scaleHelp = "CineStop marks exposure relative to 18% gray. Video and IRE read the monitor signal. Limits paints shadow and highlight warnings. The camera supplies the source curve and clip calibration.",
-        readHelp = "LOG reads the source signal. 709 reads the built-in Rec.709 monitor look, independently of the selected creative LUT.",
-        referenceHelp = "Show a compact color key over live view while False Color is active.",
+        scaleHelp = stringResource(R.string.settings_false_color_scale_help),
+        readHelp = stringResource(R.string.settings_false_color_read_help),
+        referenceHelp = stringResource(R.string.settings_false_color_reference_help),
         reset = { state.resetSettings(MonitorAssistTool.FALSE); onInteraction() })
 }
 
@@ -150,9 +150,9 @@ private fun zebra(state: MonitorAssistState, cameraInput: ExposureAssistCameraIn
     onInteraction: () -> Unit): MonitorAssistSettingsSection =
     MonitorAssistSettingsSection.ZebraNumbers(MonitorZebraUnit.entries, state.zebraUnit, { it.editorLabel },
         onUnit = { state.updateZebraUnit(it); onInteraction() },
-        unitsHelp = "Switch between native 0-255 codes and the normalized 0-100 monitoring IRE scale.",
-        highlightHelp = "High zebra warns when bright detail approaches clipping after curve compensation.",
-        midtoneHelp = "Midtone zebra marks the chosen monitoring level after curve compensation.",
+        unitsHelp = stringResource(R.string.settings_zebra_units_help),
+        highlightHelp = stringResource(R.string.settings_zebra_highlight_help),
+        midtoneHelp = stringResource(R.string.settings_zebra_midtone_help),
         highlight = zebraZone(state, cameraInput, highlight = true, onInteraction),
         midtone = zebraZone(state, cameraInput, highlight = false, onInteraction),
         reset = { state.resetSettings(MonitorAssistTool.ZEBRA); onInteraction() })
