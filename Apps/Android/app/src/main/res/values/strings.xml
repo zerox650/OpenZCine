@@ -147,6 +147,8 @@
     <string name="conn_connecting_title">Connecting…</string>
     <string name="conn_joining_detail">Joining the camera Wi‑Fi… Keep the camera\'s network screen on. Android may show \"Searching for devices…\" — choose the camera network if asked.</string>
     <string name="conn_searching_detail">Looking for %1$s on your network.</string>
+    <string name="conn_waking_detail">Waiting for %1$s to answer on the network…</string>
+    <string name="conn_silent_detail">%1$s didn\'t answer on this network. If it is asleep, wake it (half-press the shutter), check it is on the same Wi‑Fi as this device, then try again.</string>
     <string name="conn_handshaking_detail">Establishing a secure link with %1$s.</string>
     <string name="conn_pairing_title">Pairing…</string>
     <string name="conn_pairing_detail">Confirm the pairing request on %1$s.</string>

@@ -191,7 +191,7 @@ class PostConfirmReconnectTest {
 
         val failure = assertFailsWith<SavedCameraConnectException> { connector.connect(router) }
 
-        assertEquals(NikonBodyWake.silentMessage(router.displayTitle), failure.message)
+        assertEquals("${R.string.conn_silent_detail} ${router.displayTitle}", failure.message)
         assertEquals(NikonBodyWake.DIALS, liveness.dials)
         assertTrue(dials.hosts.isEmpty(), "no PTP/IP Init goes to a body that never answered")
     }

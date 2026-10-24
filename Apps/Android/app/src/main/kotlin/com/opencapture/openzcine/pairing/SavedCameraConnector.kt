@@ -260,7 +260,7 @@ internal class SavedCameraConnector(
                 _phase.value = SavedCameraPhase.Waking(record.displayTitle)
                 val wake = NikonBodyWake.awaitAnswer(host) { listDiscovery.alive(setOf(it)).isNotEmpty() }
                 if (wake is NikonBodyWake.Outcome.Silent) {
-                    throw SavedCameraConnectException(NikonBodyWake.silentMessage(record.displayTitle))
+                    throw SavedCameraConnectException(copy.text(R.string.conn_silent_detail, record.displayTitle))
                 }
                 _phase.value = SavedCameraPhase.Connecting(record.displayTitle)
             }

@@ -147,6 +147,8 @@
     <string name="conn_connecting_title">正在连接…</string>
     <string name="conn_joining_detail">正在加入相机 Wi-Fi… 请保持相机的网络屏幕开启。Android 可能显示“正在搜索设备…”——若提示请选择相机网络。</string>
     <string name="conn_searching_detail">正在你的网络上查找 %1$s。</string>
+    <string name="conn_waking_detail">正在等待 %1$s 在网络上回应…</string>
+    <string name="conn_silent_detail">%1$s 在此网络上没有回应。如果它已休眠，请唤醒它（半按快门），确认它与本机处于同一 Wi-Fi 网络，然后重试。</string>
     <string name="conn_handshaking_detail">正在与 %1$s 建立安全连接。</string>
     <string name="conn_pairing_title">正在配对…</string>
     <string name="conn_pairing_detail">请在 %1$s 上确认配对请求。</string>
