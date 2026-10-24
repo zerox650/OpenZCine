@@ -1093,4 +1093,43 @@
     <string name="gallery_fail_generic">%1$s 的相册保存失败。</string>
     <string name="gallery_message_separator">；</string>
     <string name="gallery_message_period">。</string>
+    <string name="z_legal_privacy_body">OpenZCine 通过 Wi-Fi 或 USB-C 与您的 Nikon Z 相机通信。本应用不需要账户。自动错误报告为可选项，默认关闭。
+
+OpenCapture 是数据控制者。隐私或删除请求请联系：support@opencapture.org。
+
+%1$s
+
+自行报告问题
+点击“发送报告”后，“报告问题”会将您的描述和可选的回复邮箱通过 Sentry 发送给 OpenCapture。技术细节仅在您选择包含时才会随附，并且可以先审阅。您最多可以选择三张照片或截图，并在发送前审阅或移除它们。所选图片会被调整大小并重新编码，且不含原始文件名或位置元数据。请只分享您有权发送的图片；应用不会自动附带任何图片。本次单次提交不会启用自动报告。未发送的报告仅私密地保留在本机上，7 天后过期（应用下次运行时会被移除），会等到您离开相机 Wi-Fi 后再送达，并且可以在送达前删除。请不要在消息中包含密码或其他敏感信息。您可以拒绝首次启动时的提示，之后在“系统”中启用自动报告。
+
+本机保留的内容
+• 已保存的相机、配对配置文件和重连身份标识。相机 Wi-Fi 密码仅使用本机的 Android Keystore 密钥封装保存。
+• 操作员偏好设置，例如“保持屏幕常亮”和所选的画面风格。
+• 您选择打开的 .cube 文件，以及您下载的 RED 风格。
+• 已保存的 feed 事件报告和会话报告，直到您在“系统”中删除它们。
+
+永不离机的内容
+• 实时画面、相机设置和配对流量始终留在本地链路中。我们不运营任何云服务。
+
+第三方
+• Google 可能依据其自身政策处理权限提示和系统诊断信息。Play 测试版可能依据 Google 条款向开发者发送崩溃报告。
+• Frame.io 为可选项。如果此版本已配置且您登录，您挑选的片段会从本机上传到 Adobe。令牌保存在本机存储中。
+• RED 风格为可选项。如果您选择“从 RED 下载”，应用会在应用内显示 RED 的 IPP2 输出预设页面，并从 RED 的服务器下载您挑选的文件。该次访问和下载受 RED 自己的隐私政策约束。
+• 保存片段或使用分享面板由您主动发起，随后由 Android 或您选择的应用处理该文件。
+• 源代码位于 github.com/erik-sutton95/OpenZCine。
+
+Android 可能会请求位置权限，以便应用读取相机 Wi-Fi 的名称。OpenZCine 不会将该权限用于地图、广告或位置历史记录。
+
+完整的隐私政策见 https://openzcine.app/privacy/</string>
+    <string name="z_legal_terms_body">OpenZCine 是依据 Apache License 2.0 许可的自由软件。您可以依据该许可使用、修改和分享它。Google Play 版本还受 Google Play 服务条款的约束。
+
+这是一个非官方的相机监视与遥控工具。它与 Nikon 无任何归属、背书或支持关系。“Nikon”和“Nikon Z”是 Nikon Corporation 的商标，在此仅用于标识本应用可以通信的相机。RED、Adobe 和 Frame.io 归其各自所有者所有，在此命名仅用于标识可选功能。
+
+OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写入可能被拒绝，显示可能滞后于相机的实际状态。请勿必在相机本机上核对录制状态、曝光和媒体。在生产环境中使用本软件需自担风险。
+
+本软件按“原样”（AS IS）提供，不附带任何形式的保证或条件。请参阅仓库中的 LICENSE 文件。
+
+使用本应用即表示您在参与项目时同意遵守行为准则（Code of Conduct）。
+
+完整条款见 https://openzcine.app/terms/</string>
 </resources>

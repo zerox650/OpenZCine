@@ -152,7 +152,7 @@ import com.opencapture.openzcine.settings.LiveViewStreamPreset
 import com.opencapture.openzcine.settings.OperatorSettings
 import com.opencapture.openzcine.settings.OperatorSettingsScreen
 import com.opencapture.openzcine.settings.SetupStreamSettings
-import com.opencapture.openzcine.settings.ZLegalDocuments
+import com.opencapture.openzcine.settings.zLegalDocuments
 import com.opencapture.openzcine.transport.AndroidNsdBrowser
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
@@ -1600,12 +1600,16 @@ class MainActivity : ComponentActivity() {
                         onPrivacy = { legalPage = MonitorLegalPage.PRIVACY },
                     )
                 }
+                // Hoisted out of remember(): LocalContext.current is @Composable and the
+                // remember lambda is @DisallowComposableCalls.
+                val legalContext = LocalContext.current
+                val legalDocuments = remember(legalContext) { zLegalDocuments(legalContext) }
                 legalPage?.let { page ->
                     Dialog(
                         onDismissRequest = { legalPage = null },
                         properties = DialogProperties(usePlatformDefaultWidth = false),
                     ) {
-                        MonitorLegalDocumentScreen(ZLegalDocuments, page) { legalPage = null }
+                        MonitorLegalDocumentScreen(legalDocuments, page) { legalPage = null }
                     }
                 }
                 if (gyroLogsPresented) {

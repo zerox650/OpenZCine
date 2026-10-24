@@ -17,7 +17,7 @@ class ZLegalDocumentsTest {
     fun `licenses and NOTICE are the staged repository files and privacy and terms read offline`() {
         val root = File(System.getProperty("openzcine.repositoryRoot"))
         fun text(path: String) = root.resolve(path).readText().trim()
-        val documents = ZLegalDocuments
+        val documents = zLegalDocuments()
         assertTrue(documents.notice.available)
         assertEquals(text("NOTICE"), documents.notice.body)
         val platform = assertNotNull(MonitorPlatformLegalNotices.text)

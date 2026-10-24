@@ -338,7 +338,7 @@ internal fun OperatorSettingsScreen(
         diagnostics = MonitorSettingsDiagnosticsSource(
             save = { if (!systemSettingsActions.shareDiagnostics()) toastUnavailable(context) },
             incidents = AppDiagnostics.incidents),
-        legal = ZLegalDocuments,
+        legal = remember(context) { zLegalDocuments(context) },
         information = MonitorSettingsInformationSource(stringResource(R.string.system_theme_charcoal),
             stringResource(R.string.settings_info_protocol),
             appVersionText(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
