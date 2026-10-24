@@ -1,5 +1,9 @@
 package com.opencapture.openzcine.media
 
+import android.content.Context
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
+
 
 /** Cache completeness shown by playback chrome; delivery itself can still cache from the camera. */
 internal enum class PlaybackShareState {
@@ -41,8 +45,12 @@ internal fun canDeliverMedia(
  * Why Share waits while the clip is still caching (ZAB-524): the camera finishes the copy when
  * it can still transfer, else delivery waits for the private cache.
  */
-internal fun playbackShareNotice(state: PlaybackShareState, cameraTransferAvailable: Boolean): String? = when {
+internal fun playbackShareNotice(
+    state: PlaybackShareState,
+    cameraTransferAvailable: Boolean,
+    context: Context? = null,
+): String? = when {
     state != PlaybackShareState.BUFFERING -> null
-    cameraTransferAvailable -> "Still caching from the camera. Share will finish the copy first."
-    else -> "Buffering camera proxy. Delivery unlocks after the private cache completes."
+    cameraTransferAvailable -> lstr(context, R.string.media_playback_notice_caching)
+    else -> lstr(context, R.string.media_playback_notice_buffering)
 }

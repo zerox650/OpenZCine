@@ -72,6 +72,19 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.gallery_fail_generic to "Gallery delivery failed for %1\$s.",
     R.string.gallery_message_separator to "; ",
     R.string.gallery_message_period to ".",
+    R.string.media_playback_notice_caching to "Still caching from the camera. Share will finish the copy first.",
+    R.string.media_playback_notice_buffering to "Buffering camera proxy. Delivery unlocks after the private cache completes.",
+    R.string.media_playback_failed_transfer to
+        "Camera media transfer failed. The partial cache remains private and cannot be shared.",
+    R.string.media_playback_failed_codec to
+        "This camera proxy uses a codec this Android device cannot decode. It remains private and can be shared after its cache completes.",
+    R.string.media_playback_failed_generic to
+        "Couldn't play this camera proxy. It remains private and is shareable only after a complete cache artifact is verified.",
+    R.string.media_playback_open_failed to "Could not open that clip.",
+    R.string.media_browse_querying_card to "Querying card storage\u2026",
+    R.string.media_browse_listing_camera to "Listing clips on camera\u2026",
+    R.string.media_browse_checking_cache to "Checking persisted complete cache entries\u2026",
+    R.string.media_browse_opening_local to "Opening local library\u2026",
     R.string.z_legal_privacy_body to """
         OpenZCine talks to your Nikon Z camera over Wi-Fi or USB-C. The app has no account. Automatic error reports are optional and off by default.
 

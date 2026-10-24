@@ -1132,4 +1132,14 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
 使用本应用即表示您在参与项目时同意遵守行为准则（Code of Conduct）。
 
 完整条款见 https://openzcine.app/terms/</string>
+    <string name="media_playback_notice_caching">仍在从相机缓存。分享会先完成拷贝。</string>
+    <string name="media_playback_notice_buffering">正在缓冲相机代理片段。私有缓存完成后即可交付。</string>
+    <string name="media_playback_failed_transfer">相机媒体传输失败。部分缓存保持私密，无法分享。</string>
+    <string name="media_playback_failed_codec">此相机代理片段使用了本 Android 设备无法解码的编码格式。它保持私密，缓存完成后即可分享。</string>
+    <string name="media_playback_failed_generic">无法播放此相机代理片段。它保持私密，仅在完整缓存文件验证通过后可分享。</string>
+    <string name="media_playback_open_failed">无法打开该片段。</string>
+    <string name="media_browse_querying_card">正在查询卡内存储…</string>
+    <string name="media_browse_listing_camera">正在列出相机中的片段…</string>
+    <string name="media_browse_checking_cache">正在检查已保存的完整缓存条目…</string>
+    <string name="media_browse_opening_local">正在打开本地媒体库…</string>
 </resources>

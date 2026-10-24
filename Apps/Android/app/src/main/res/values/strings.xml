@@ -1132,4 +1132,14 @@ The software is provided on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS O
 By using the app you agree to follow the Code of Conduct when participating in the project.
 
 The full terms are https://openzcine.app/terms/</string>
+    <string name="media_playback_notice_caching">Still caching from the camera. Share will finish the copy first.</string>
+    <string name="media_playback_notice_buffering">Buffering camera proxy. Delivery unlocks after the private cache completes.</string>
+    <string name="media_playback_failed_transfer">Camera media transfer failed. The partial cache remains private and cannot be shared.</string>
+    <string name="media_playback_failed_codec">This camera proxy uses a codec this Android device cannot decode. It remains private and can be shared after its cache completes.</string>
+    <string name="media_playback_failed_generic">Couldn\'t play this camera proxy. It remains private and is shareable only after a complete cache artifact is verified.</string>
+    <string name="media_playback_open_failed">Could not open that clip.</string>
+    <string name="media_browse_querying_card">Querying card storage…</string>
+    <string name="media_browse_listing_camera">Listing clips on camera…</string>
+    <string name="media_browse_checking_cache">Checking persisted complete cache entries…</string>
+    <string name="media_browse_opening_local">Opening local library…</string>
 </resources>

@@ -783,8 +783,10 @@ internal fun MediaBrowseScreen(
         }
         if (library == null) com.opencapture.opencine.cameracontrols.MediaEmptyState(
             listing = true,
-            subtitle = if (librarySource == MediaLibrarySource.CAMERA) "Querying card storage…" else "Checking persisted complete cache entries…",
-            title = if (librarySource == MediaLibrarySource.CAMERA) "Listing clips on camera…" else "Opening local library…",
+            subtitle = if (librarySource == MediaLibrarySource.CAMERA) context.getString(R.string.media_browse_querying_card)
+                else context.getString(R.string.media_browse_checking_cache),
+            title = if (librarySource == MediaLibrarySource.CAMERA) context.getString(R.string.media_browse_listing_camera)
+                else context.getString(R.string.media_browse_opening_local),
         )
         MonitorOperatorDeliveryHost(deliveryPopup, onDismissPopup = { deliveryPopup = null }, mediaDelivery.coordinator)
     }

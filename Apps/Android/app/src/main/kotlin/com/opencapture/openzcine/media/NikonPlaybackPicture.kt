@@ -2,10 +2,12 @@
 
 package com.opencapture.openzcine.media
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.TextureView
+import com.opencapture.openzcine.lstr
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -191,7 +193,8 @@ internal fun rememberNikonPlaybackPicture(
 
                 override fun onPlayerError(error: PlaybackException) {
                     playbackError = error
-                    native.publish(attachment, MonitorPlaybackEvent.Failed(error.message ?: "Could not open that clip."))
+                    native.publish(attachment, MonitorPlaybackEvent.Failed(
+                        error.message ?: context.getString(R.string.media_playback_open_failed)))
                 }
             }
         player.addListener(listener)
@@ -384,7 +387,7 @@ internal fun rememberNikonPlaybackPicture(
     }
     DisposableEffect(scopeSession) { onDispose { scopeSession.close() } }
     val error = if (playbackError != null || entry.state == MediaCacheState.FAILED)
-        playbackFailureMessage(playbackError, entry.state == MediaCacheState.FAILED) else null
+        playbackFailureMessage(playbackError, entry.state == MediaCacheState.FAILED, context) else null
     LaunchedEffect(error, attachment) {
         if (error != null) native.publish(attachment, MonitorPlaybackEvent.Failed(error))
     }
@@ -418,11 +421,12 @@ internal fun rememberNikonPlaybackPicture(
 private fun playbackFailureMessage(
     error: PlaybackException?,
     cacheFailed: Boolean,
+    context: Context? = null,
 ): String =
     when {
-        cacheFailed -> "Camera media transfer failed. The partial cache remains private and cannot be shared."
+        cacheFailed -> lstr(context, R.string.media_playback_failed_transfer)
         error?.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED ||
             error?.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ->
-            "This camera proxy uses a codec this Android device cannot decode. It remains private and can be shared after its cache completes."
-        else -> "Couldn't play this camera proxy. It remains private and is shareable only after a complete cache artifact is verified."
+            lstr(context, R.string.media_playback_failed_codec)
+        else -> lstr(context, R.string.media_playback_failed_generic)
     }
