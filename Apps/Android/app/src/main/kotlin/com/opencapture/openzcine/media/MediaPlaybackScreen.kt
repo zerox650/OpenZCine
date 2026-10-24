@@ -113,7 +113,7 @@ internal fun MediaPlaybackScreen(
     val playerContext = remember(actualLibrary, initial.id, connectionOwner, cacheStore) {
         NikonOperatorPlaybackContext(actualLibrary, initial, scope, capture.source, capture.record,
             transferFactory = nikonPlaybackTransfers(cacheStore, connectionOwner, cameraTransferAvailable,
-                onResolvedObjectSize), captureDeliveryCleanup = {
+                onResolvedObjectSize, context), captureDeliveryCleanup = {
                 // One PTP data channel: a delivery still caching from the camera yields to playback.
                 val outgoing = coordinator.capturedRun.takeIf { coordinator.holdsCameraTransfer }
                 suspend { outgoing?.cancelAndJoin() }

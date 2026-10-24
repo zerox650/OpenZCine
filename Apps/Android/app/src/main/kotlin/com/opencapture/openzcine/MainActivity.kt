@@ -260,7 +260,7 @@ class MainActivity : ComponentActivity() {
                     enabled = gyroState.enabled, setEnabled = gyroCapture::setEnabled,
                     status = gyroState.status, available = gyroState.available || gyroState.enabled,
                     openLogs = { gyroLogsPresented = true },
-                    mountName = if (gyroState.mountCalibration != null) "Calibrated"
+                    mountName = if (gyroState.mountCalibration != null) stringResource(R.string.gyro_mount_calibrated_short)
                         else gyroState.mountOptions.firstOrNull { it.id == gyroState.mountPreset }?.shortLabel,
                     configureMount = if (gyroState.mountOptions.isNotEmpty()) ({ gyroMountPresented = true }) else null,
                 )
@@ -602,7 +602,7 @@ class MainActivity : ComponentActivity() {
                         camera.routes.any { it.extras[NikonSavedRecordsV0.Extra.PROFILE_ID] == activeSavedCamera?.profileID }
                     } ?: SavedCamera(
                         id = "monitor:${common.id}", integration = IntegrationID("nikon"),
-                        advertisedName = activeSavedCamera?.cameraName ?: "Monitor", model = "")
+                        advertisedName = activeSavedCamera?.cameraName ?: stringResource(R.string.relay_device_name_default), model = "")
                     val connected = ConnectedCamera(saved, common, shellSessions.services(native, common))
                     if (borrowed != null) {
                         shell.borrow(connected) {
@@ -868,7 +868,7 @@ class MainActivity : ComponentActivity() {
                             watchOnCameraApNoticeVisible = true
                             return@join
                         }
-                        relayBroadcastController.stop(notifyReason = "The broadcast ended.")
+                        relayBroadcastController.stop(notifyReason = stringResource(R.string.relay_broadcast_ended))
                         relayBroadcastEnabled = false
                         val previous = watchController
                         if (previous != null) connectionScope.launch { previous.stop() }
@@ -891,6 +891,7 @@ class MainActivity : ComponentActivity() {
                             watchController = null
                             if (leaving != null) connectionScope.launch { leaving.stop() }
                         },
+                        context = applicationContext,
                     )
                     var monitorSessionRecoveryEnabled by remember(monitored) { mutableStateOf(true) }
                     val monitorAssist = remember(monitored) {
@@ -950,7 +951,7 @@ class MainActivity : ComponentActivity() {
                             // session leaves composition.
                             if (monitorSession === exitingSession) {
                                 relayBroadcastController.stop(
-                                    notifyReason = "The broadcast ended.")
+                                    notifyReason = stringResource(R.string.relay_broadcast_ended))
                                 relayBroadcastEnabled = false
                                 shell.close()
                                 monitorSession = null
@@ -1254,7 +1255,7 @@ class MainActivity : ComponentActivity() {
                                                 }
                                             } else {
                                                 relayBroadcastController.stop(
-                                                    notifyReason = "The broadcast ended.")
+                                                    notifyReason = stringResource(R.string.relay_broadcast_ended))
                                                 relayBroadcastEnabled = false
                                             }
                                         },
@@ -1325,9 +1326,9 @@ class MainActivity : ComponentActivity() {
                             savedCameraID = primary?.savedCameraID,
                             cameraDisplayName =
                                 when {
-                                    offlineBuckets.isEmpty() -> "Media Library"
+                                    offlineBuckets.isEmpty() -> stringResource(R.string.gallery_bucket_library)
                                     offlineBuckets.size == 1 -> offlineBuckets.first().displayName
-                                    else -> "All cameras"
+                                    else -> stringResource(R.string.gallery_bucket_all_cameras)
                                 },
                             offlineCameraIDs = offlineBuckets.map { it.cameraID },
                             assists = offlineAssist,
@@ -1435,7 +1436,7 @@ class MainActivity : ComponentActivity() {
                     AppShell(
                         model = shell,
                         modifier = if (watcherBrowsePresented) Modifier.clearAndSetSemantics {} else Modifier,
-                        brand = ShellBrand("OpenZCine", nearbyNote = "on this network"),
+                        brand = ShellBrand("OpenZCine", nearbyNote = stringResource(R.string.shell_nearby_note)),
                         actions =
                             ShellActions(
                                 diagnostics = { systemSettingsActions.shareDiagnostics() },
@@ -1529,8 +1530,8 @@ class MainActivity : ComponentActivity() {
                             host = watcherBrowseHost,
                             modifier = Modifier.fillMaxSize().background(MonitorPalette.background)
                                 .windowInsetsPadding(WindowInsets.safeDrawing),
-                            networkInstructions = "Join the same regular Wi-Fi as the sharing device. Leave the camera's own Wi-Fi before watching; it may block traffic between devices.",
-                            emptyMessage = "No shared feeds on this network. Check that sharing is on and both devices can reach each other. Allow Local Network if asked.",
+                            networkInstructions = stringResource(R.string.watcher_network_instructions),
+                            emptyMessage = stringResource(R.string.watcher_no_feeds_message),
                         )
                     }
                     if (multicam.presented) {
@@ -1611,7 +1612,7 @@ class MainActivity : ComponentActivity() {
                     GyroLogsScreen(gyroState,
                         onShare = { entry ->
                             shareGyroLog(this@MainActivity, entry, connectionScope) {
-                                Toast.makeText(this@MainActivity, it.message ?: "Could not share gyro log.", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this@MainActivity, it.message ?: stringResource(R.string.gyro_share_failed), Toast.LENGTH_LONG).show()
                             }
                         }, onDelete = gyroCapture::delete,
                         onClose = { gyroLogsPresented = false })

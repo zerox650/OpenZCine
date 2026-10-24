@@ -1,5 +1,8 @@
 package com.opencapture.openzcine.relay
 
+import android.content.Context
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import com.opencapture.opencine.cameracontrols.WatcherBrowseHost
 import com.opencapture.opencine.cameracontrols.WatcherFeedRow
 import com.opencapture.opencine.cameracontrols.WatcherJoinStatus
@@ -13,6 +16,7 @@ internal class RelayWatcherBrowseHost(
     private val join: (RelayBroadcast) -> Unit,
     private val submitPasscode: (String) -> Unit,
     private val close: () -> Unit,
+    private val context: Context? = null,
 ) : WatcherBrowseHost {
     override val watcherFeeds: List<WatcherFeedRow>
         get() = broadcasts().map { WatcherFeedRow(it.name, it.name) }
@@ -25,8 +29,10 @@ internal class RelayWatcherBrowseHost(
                 RelayWatchUiState.Phase.CONNECTING -> WatcherJoinStatus.Connecting
                 RelayWatchUiState.Phase.WATCHING -> WatcherJoinStatus.Live
                 RelayWatchUiState.Phase.DENIED -> if (value.needsPasscode) WatcherJoinStatus.NeedsPasscode
-                    else WatcherJoinStatus.Failed(value.failureReason ?: "The broadcast refused this device.")
-                RelayWatchUiState.Phase.FAILED -> WatcherJoinStatus.Failed(value.failureReason ?: "The broadcast disconnected.")
+                    else WatcherJoinStatus.Failed(value.failureReason
+                        ?: lstr(context, R.string.relay_join_refused))
+                RelayWatchUiState.Phase.FAILED -> WatcherJoinStatus.Failed(value.failureReason
+                    ?: lstr(context, R.string.relay_join_disconnected))
             }
         } ?: WatcherJoinStatus.Idle
     override fun startWatcherBrowse() { browse() }

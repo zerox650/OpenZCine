@@ -1036,4 +1036,22 @@
     <string name="nearby_discovery_filtered">发现已过滤</string>
     <string name="nearby_live_subtitle">来自另一设备的实时画面</string>
     <string name="nearby_watch_status">观看画面但不控制相机。</string>
+    <string name="media_object_image">图像</string>
+    <string name="media_object_clip">视频</string>
+    <string name="media_transfer_not_connected">未连接到相机。</string>
+    <string name="media_cached_open_failed">缓存的 %1$s 无法打开。</string>
+    <string name="media_cached_unavailable">缓存的 %1$s 已不可用。</string>
+    <string name="media_camera_core_missing">此版本未内置相机核心。</string>
+    <string name="media_camera_open_failed">无法打开相机 %1$s。</string>
+    <string name="relay_join_refused">广播拒绝了此设备。</string>
+    <string name="relay_join_disconnected">广播已断开。</string>
+    <string name="gyro_mount_calibrated_short">已校准</string>
+    <string name="relay_device_name_default">监视器</string>
+    <string name="relay_broadcast_ended">广播已结束。</string>
+    <string name="gallery_bucket_library">媒体库</string>
+    <string name="gallery_bucket_all_cameras">所有相机</string>
+    <string name="shell_nearby_note">在此网络上</string>
+    <string name="watcher_network_instructions">加入与分享设备相同的常规 Wi-Fi。观看前请先退出相机自带的 Wi-Fi，它可能阻挡设备间的通信。</string>
+    <string name="watcher_no_feeds_message">此网络上没有共享画面。请确认分享已开启、两台设备可以互相访问。如弹出提示，请允许“本地网络”权限。</string>
+    <string name="gyro_share_failed">无法分享陀螺仪日志。</string>
 </resources>

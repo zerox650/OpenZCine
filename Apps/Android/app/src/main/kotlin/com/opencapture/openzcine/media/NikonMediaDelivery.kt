@@ -36,7 +36,7 @@ internal typealias NikonDeliverySelection = MonitorOperatorDeliverySelection<Med
  * FileProvider's `share/ready` subtree, so the original cache stays private.
  */
 internal class NikonMediaDelivery(
-    appContext: Context,
+    private val appContext: Context,
     /** The app-scoped run owner the root chrome reads. */
     val coordinator: MonitorDeliveryCoordinator,
     val frameio: FrameioDeliveryController,
@@ -82,7 +82,7 @@ internal class NikonMediaDelivery(
         val selection = capture.selection
         val bakeable = selection.any { it.clip.contentKind == NikonMediaContentKind.PLAYABLE_PROXY }
         val originals = NikonDeliveryOriginals(selection, cacheStore, connectionOwner != null,
-            SwiftCoreMediaObjectTransferBridge(connectionOwner), MonitorDeliveryAdmission(capture::contentCurrent),
+            SwiftCoreMediaObjectTransferBridge(connectionOwner, appContext), MonitorDeliveryAdmission(capture::contentCurrent),
             acquisition = MonitorDeliveryAdmission(capture::nativeCurrent))
         val source = MonitorDeliverySource<MediaDeliverySelection, Unit, MonitorMovieExportContainer>(originals.service,
             prepare = { record, configuration, report ->

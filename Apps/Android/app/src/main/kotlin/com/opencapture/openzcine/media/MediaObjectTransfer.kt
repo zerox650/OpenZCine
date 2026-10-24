@@ -1,10 +1,13 @@
 package com.opencapture.openzcine.media
 
+import android.content.Context
 import com.opencapture.opencine.appkit.MonitorDeliveryAdmission
 import com.opencapture.opencine.appkit.MonitorDeliveryOriginalService
 import kotlinx.coroutines.CancellationException
 import com.opencapture.opencine.nikon.NikonMediaClipRecord
+import com.opencapture.openzcine.R
 import com.opencapture.openzcine.bridge.SwiftCore
+import com.opencapture.openzcine.lstr
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +46,7 @@ internal interface MediaObjectTransferBridge {
  */
 internal class SwiftCoreMediaObjectTransferBridge(
     private val connectionOwner: Long?,
+    private val context: Context? = null,
 ) : MediaObjectTransferBridge {
     override val isAvailable: Boolean
         get() = SwiftCore.isAvailable
@@ -56,7 +60,7 @@ internal class SwiftCoreMediaObjectTransferBridge(
         resumeOffset: Long,
         listener: NikonNative.MediaTransferListener,
     ) {
-        val owner = connectionOwner ?: return listener.onFailed("Not connected to a camera.")
+        val owner = connectionOwner ?: return listener.onFailed(lstr(context, R.string.media_transfer_not_connected))
         NikonNative.sessionStartMediaTransfer(owner, handle, reportedSize, resumeOffset, listener)
     }
 
@@ -129,6 +133,7 @@ internal fun prepareMediaObjectTransfer(
     bridge: MediaObjectTransferBridge,
     cameraTransferAvailable: Boolean = true,
     onResolvedSize: (Long) -> Unit = {},
+    context: Context? = null,
 ): MediaTransferPreparation {
     val cached =
         try {
@@ -139,7 +144,7 @@ internal fun prepareMediaObjectTransfer(
             )
         } catch (error: Exception) {
             return MediaTransferPreparation.Failed(
-                error.message ?: "Cached $objectLabel could not be opened.",
+                error.message ?: lstr(context, R.string.media_cached_open_failed, objectLabel),
             )
         }
     // A validated final artifact is self-contained. Opening it must not depend
@@ -147,10 +152,10 @@ internal fun prepareMediaObjectTransfer(
     // saved-camera library useful after relaunch and while disconnected.
     if (cached != null) return MediaTransferPreparation.Ready(cached)
     if (!cameraTransferAvailable) {
-        return MediaTransferPreparation.Failed("Cached $objectLabel is no longer available.")
+        return MediaTransferPreparation.Failed(lstr(context, R.string.media_cached_unavailable, objectLabel))
     }
     if (!bridge.isAvailable) {
-        return MediaTransferPreparation.Failed("Camera core is not bundled in this build.")
+        return MediaTransferPreparation.Failed(lstr(context, R.string.media_camera_core_missing))
     }
     return try {
         val totalBytes = bridge.resolveMediaSize(clip.handle.toInt(), clip.sizeBytes)
@@ -176,7 +181,7 @@ internal fun prepareMediaObjectTransfer(
         }
         MediaTransferPreparation.Ready(entry)
     } catch (error: Exception) {
-        MediaTransferPreparation.Failed(error.message ?: "Camera $objectLabel could not be opened.")
+        MediaTransferPreparation.Failed(error.message ?: lstr(context, R.string.media_camera_open_failed, objectLabel))
     }
 }
 

@@ -1036,4 +1036,22 @@
     <string name="nearby_discovery_filtered">Discovery is filtered</string>
     <string name="nearby_live_subtitle">Live feed from another device</string>
     <string name="nearby_watch_status">Watch the picture without controlling the camera.</string>
+    <string name="media_object_image">image</string>
+    <string name="media_object_clip">clip</string>
+    <string name="media_transfer_not_connected">Not connected to a camera.</string>
+    <string name="media_cached_open_failed">Cached %1$s could not be opened.</string>
+    <string name="media_cached_unavailable">Cached %1$s is no longer available.</string>
+    <string name="media_camera_core_missing">Camera core is not bundled in this build.</string>
+    <string name="media_camera_open_failed">Camera %1$s could not be opened.</string>
+    <string name="relay_join_refused">The broadcast refused this device.</string>
+    <string name="relay_join_disconnected">The broadcast disconnected.</string>
+    <string name="gyro_mount_calibrated_short">Calibrated</string>
+    <string name="relay_device_name_default">Monitor</string>
+    <string name="relay_broadcast_ended">The broadcast ended.</string>
+    <string name="gallery_bucket_library">Media Library</string>
+    <string name="gallery_bucket_all_cameras">All cameras</string>
+    <string name="shell_nearby_note">on this network</string>
+    <string name="watcher_network_instructions">Join the same regular Wi-Fi as the sharing device. Leave the camera\'s own Wi-Fi before watching; it may block traffic between devices.</string>
+    <string name="watcher_no_feeds_message">No shared feeds on this network. Check that sharing is on and both devices can reach each other. Allow Local Network if asked.</string>
+    <string name="gyro_share_failed">Could not share gyro log.</string>
 </resources>

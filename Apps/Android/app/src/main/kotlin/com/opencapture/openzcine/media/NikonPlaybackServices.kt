@@ -4,6 +4,7 @@ package com.opencapture.openzcine.media
 
 import android.content.Context
 import com.opencapture.monitorui.MonitorAssistTool
+import com.opencapture.openzcine.R
 import com.opencapture.opencine.appkit.*
 import com.opencapture.opencine.cameracontrols.*
 import com.opencapture.opencine.media.*
@@ -114,16 +115,18 @@ internal fun nikonPlaybackTransfers(
     connectionOwner: Long?,
     cameraTransferAvailable: Boolean,
     onResolvedObjectSize: (NikonMediaClipRecord, Long) -> Unit,
+    context: Context,
 ): (MonitorMediaRecord<NikonLibraryClip>, () -> Boolean) -> MediaTransferCoordinator = { record, ifCurrent ->
     val clip = record.payload.clip
-    val delegate = SwiftCoreMediaObjectTransferBridge(connectionOwner)
+    val delegate = SwiftCoreMediaObjectTransferBridge(connectionOwner, context)
     val bridge = AdmittedPlaybackTransferBridge(delegate, ifCurrent)
     MediaTransferCoordinator(prepareTransfer = {
         if (!ifCurrent()) MediaTransferPreparation.Cancelled else withContext(Dispatchers.IO) {
             if (!ifCurrent()) MediaTransferPreparation.Cancelled else {
                 val result = prepareMediaObjectTransfer(cacheStore, record.payload.bucket, clip,
-                    "clip", bridge, cameraTransferAvailable,
-                    onResolvedSize = { bytes -> if (ifCurrent()) onResolvedObjectSize(clip, bytes) })
+                    context.getString(R.string.media_object_clip), bridge, cameraTransferAvailable,
+                    onResolvedSize = { bytes -> if (ifCurrent()) onResolvedObjectSize(clip, bytes) },
+                    context = context)
                 if (ifCurrent()) result else MediaTransferPreparation.Cancelled
             }
         }

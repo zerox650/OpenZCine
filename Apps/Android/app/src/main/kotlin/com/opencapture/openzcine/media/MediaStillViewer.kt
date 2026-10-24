@@ -1,11 +1,13 @@
 package com.opencapture.openzcine.media
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.opencapture.openzcine.R
 import com.opencapture.opencine.appkit.*
 import com.opencapture.opencine.cameracontrols.MonitorOperatorPhotoScreen
 import com.opencapture.opencine.nikon.NikonMediaClipRecord
@@ -54,7 +56,7 @@ internal fun MediaStillViewer(
 ) {
     val context = LocalContext.current
     val io = remember(library, record.asset.id, admission, cacheStore, connectionOwner) {
-        NikonStillPictureIO(cacheStore, cameraTransferAvailable, connectionOwner, onResolvedObjectSize)
+        NikonStillPictureIO(cacheStore, cameraTransferAvailable, connectionOwner, onResolvedObjectSize, context)
     }
     val variants = remember(record, rawRecord) {
         if (rawRecord == null) emptyList() else listOf(
@@ -127,6 +129,7 @@ private class NikonStillPictureIO(
     private val cameraTransferAvailable: Boolean,
     private val connectionOwner: Long?,
     private val onResolvedObjectSize: (NikonMediaClipRecord, Long) -> Unit,
+    private val context: Context?,
 ) {
     private val thumbnails = mutableMapOf<com.opencapture.opencine.media.MediaAssetID, Bitmap?>()
     private val complete = mutableMapOf<com.opencapture.opencine.media.MediaAssetID, MediaCacheEntry>()
@@ -169,9 +172,12 @@ private class NikonStillPictureIO(
         val coordinator = MediaTransferCoordinator(prepareTransfer = {
             withContext(Dispatchers.IO) {
                 if (!request.isCurrent()) MediaTransferPreparation.Cancelled else prepareMediaObjectTransfer(
-                    cacheStore = cache, cameraID = value.bucket, clip = value.clip, objectLabel = "image",
-                    bridge = SwiftCoreMediaObjectTransferBridge(connectionOwner), cameraTransferAvailable = cameraTransferAvailable,
-                    onResolvedSize = { if (request.isCurrent()) onResolvedObjectSize(value.clip, it) })
+                    cacheStore = cache, cameraID = value.bucket, clip = value.clip,
+                    objectLabel = context?.getString(R.string.media_object_image) ?: "image",
+                    bridge = SwiftCoreMediaObjectTransferBridge(connectionOwner, context),
+                    cameraTransferAvailable = cameraTransferAvailable,
+                    onResolvedSize = { if (request.isCurrent()) onResolvedObjectSize(value.clip, it) },
+                    context = context)
             }
         }, stopTransfer = {
             if (cameraTransferAvailable && SwiftCore.isAvailable && connectionOwner != null)
