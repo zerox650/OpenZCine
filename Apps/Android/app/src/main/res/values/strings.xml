@@ -824,4 +824,39 @@
     <string name="conn_fail_saved_profile_required">This camera needs to pair with this phone again. Use Pair new camera, or create a Connect to PC profile for this phone.</string>
     <string name="conn_fail_non_numeric_host">Couldn\'t find the camera\'s address on its network. Rejoin the camera\'s Wi‑Fi and try again.</string>
     <string name="conn_fail_unreachable">Couldn\'t reach the camera. Check Wi‑Fi and try again.</string>
+
+    <!-- Media browse, empty states and deletion copy (MediaBrowseScreen, MediaDeletion) -->
+    <string name="media_browse_incomplete">Couldn\'t finish listing camera media.</string>
+    <string name="media_browse_stopped_after">Listing stopped after %1$d %2$s. Retry to load the complete library.</string>
+    <string name="media_browse_reconnect">Reconnect the camera to list media.</string>
+    <string name="media_core_not_bundled">Camera core is not bundled in this build.</string>
+    <string name="media_empty_camera_card">Clips appear here as they\'re discovered on the card.</string>
+    <string name="media_empty_opened">Complete camera media you have opened appears here safely.</string>
+    <string name="media_browse_failed_title">Couldn\'t list media</string>
+    <string name="media_delete_clip_title">Delete clip from camera?</string>
+    <string name="media_delete_photo_title">Delete this photo from the camera card?</string>
+    <string name="media_count_noun_one">item</string>
+    <string name="media_count_noun_other">items</string>
+
+    <!-- Media loading states and share-metadata copy (MediaBrowseScreen) -->
+    <string name="media_loading_camera_title">Listing clips on camera…</string>
+    <string name="media_loading_camera_detail">Querying card storage…</string>
+    <string name="media_loading_local_title">Opening local library…</string>
+    <string name="media_loading_local_detail">Checking persisted complete cache entries…</string>
+    <string name="media_empty_camera_title">No clips yet</string>
+    <string name="media_empty_local_title">No complete cached media</string>
+    <string name="media_share_unknown_date">unknown date</string>
+    <string name="media_share_unknown_size">unknown size</string>
+    <string name="media_share_more_selected">+%1$d more selected %2$s</string>
+
+    <!-- Deletion confirmation and rating refusal copy (MediaDeletion) -->
+    <string name="media_delete_clip_named">Delete %1$s from the camera card?</string>
+    <string name="media_delete_items_count">Delete %1$d items from the camera card?</string>
+    <string name="media_delete_pair_note"> Both the RAW and JPEG files of a pair are removed.</string>
+    <string name="media_delete_master_note"> The camera master file is removed with its proxy.</string>
+    <string name="media_delete_backup_note"> The backup copies on the other card are removed too.</string>
+    <string name="rating_refusal_no_response">Rating not saved — the camera didn\'t respond.</string>
+    <string name="rating_refusal_access_denied">Rating not saved — camera refused (Access Denied %1$s). It may not accept ratings in this mode.</string>
+    <string name="rating_refusal_coded">Rating not saved — camera refused (%1$s).</string>
+    <string name="media_delete_confirm">Delete</string>
 </resources>

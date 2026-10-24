@@ -64,7 +64,8 @@ internal fun playbackPanelPlacement(reference: StoredPanelCenter, audio: StoredP
 internal fun playbackRating(available: Boolean, connectionOwner: Long?,
     mirror: (NikonMediaClipRecord, Int) -> Unit,
     capture: ((NikonMediaClipRecord) -> NikonMediaRatingCompletion)?,
-    diagnostic: (AndroidDiagnosticEvent) -> Unit): MonitorMediaPlaybackRatingService<NikonLibraryClip> =
+    diagnostic: (AndroidDiagnosticEvent) -> Unit,
+    context: Context): MonitorMediaPlaybackRatingService<NikonLibraryClip> =
     MonitorMediaPlaybackRatingService(levels = (1..5).toList(), noticeMilliseconds = 4_000,
         read = { request ->
             val clip = request.record.payload.clip
@@ -101,7 +102,7 @@ internal fun playbackRating(available: Boolean, connectionOwner: Long?,
                     is RatingWriteResult.Refused -> {
                         diagnostic(if (outcome.code == 0x2013) AndroidDiagnosticEvent.RATING_WRITE_REFUSED_ACCESS_DENIED
                             else AndroidDiagnosticEvent.RATING_WRITE_REFUSED)
-                        MonitorMediaPictureRatingResult.Refused(ratingRefusalMessage(outcome.code))
+                        MonitorMediaPictureRatingResult.Refused(ratingRefusalMessage(outcome.code, context))
                     }
                 }
             }

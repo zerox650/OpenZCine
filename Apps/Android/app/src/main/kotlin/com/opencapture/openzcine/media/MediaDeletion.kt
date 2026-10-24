@@ -1,7 +1,9 @@
 package com.opencapture.openzcine.media
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.opencapture.opencine.nikon.NikonMediaClipRecord
@@ -11,6 +13,8 @@ import com.opencapture.opencine.nikon.NikonMediaObjectIdentity
 import com.opencapture.opencine.appkit.LocalOperatorHaptics
 import com.opencapture.monitorui.MonitorConfirmPopup
 import com.opencapture.monitorui.MonitorStarRating
+import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 
 /**
  * Camera-card deletion confirmation and the star-rating chrome shared by the still viewer, the
@@ -28,25 +32,30 @@ internal fun deleteConfirmationMessage(
     catalog: List<NikonMediaClipRecord>,
     selection: List<NikonMediaClipRecord>,
     ownerCameraID: (NikonMediaClipRecord) -> String,
+    context: Context? = null,
 ): String {
-    return deleteConfirmationMessage(selection, NikonMediaDeletionPlan.of(catalog, selection, ownerCameraID))
+    return deleteConfirmationMessage(selection, NikonMediaDeletionPlan.of(catalog, selection, ownerCameraID), context)
 }
 
-internal fun deleteConfirmationMessage(selection: List<NikonMediaClipRecord>, plan: NikonMediaDeletionPlan): String {
+internal fun deleteConfirmationMessage(
+    selection: List<NikonMediaClipRecord>,
+    plan: NikonMediaDeletionPlan,
+    context: Context? = null,
+): String {
     var message =
         if (selection.size == 1) {
             val only = selection.single()
             if (only.contentKind == NikonMediaContentKind.STILL_PHOTO) {
-                "Delete this photo from the camera card?"
+                lstr(context, R.string.media_delete_photo_title)
             } else {
-                "Delete ${only.filename} from the camera card?"
+                lstr(context, R.string.media_delete_clip_named, only.filename)
             }
         } else {
-            "Delete ${selection.size} items from the camera card?"
+            lstr(context, R.string.media_delete_items_count, selection.size)
         }
-    if (plan.pairCount > 0) message += " Both the RAW and JPEG files of a pair are removed."
-    if (plan.masterCount > 0) message += " The camera master file is removed with its proxy."
-    if (plan.backupCount > 0) message += " The backup copies on the other card are removed too."
+    if (plan.pairCount > 0) message += lstr(context, R.string.media_delete_pair_note)
+    if (plan.masterCount > 0) message += lstr(context, R.string.media_delete_master_note)
+    if (plan.backupCount > 0) message += lstr(context, R.string.media_delete_backup_note)
     return message
 }
 
@@ -96,13 +105,12 @@ internal fun ratingWriteResult(returnValue: Int): RatingWriteResult =
     }
 
 /** Operator-facing refusal line carrying the body's response code (the diagnostic discriminator). */
-internal fun ratingRefusalMessage(code: Int): String =
+internal fun ratingRefusalMessage(code: Int, context: Context? = null): String =
     when {
-        code == 0 -> "Rating not saved — the camera didn't respond."
+        code == 0 -> lstr(context, R.string.rating_refusal_no_response)
         code == 0x2013 ->
-            "Rating not saved — camera refused (Access Denied ${ratingCodeHex(code)}). " +
-                "It may not accept ratings in this mode."
-        else -> "Rating not saved — camera refused (${ratingCodeHex(code)})."
+            lstr(context, R.string.rating_refusal_access_denied, ratingCodeHex(code))
+        else -> lstr(context, R.string.rating_refusal_coded, ratingCodeHex(code))
     }
 
 private fun ratingCodeHex(code: Int): String = "0x%04X".format(code)
@@ -121,7 +129,7 @@ internal fun MediaDeleteConfirmDialog(
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         MonitorConfirmPopup(
             title = message,
-            confirmTitle = "Delete",
+            confirmTitle = stringResource(R.string.media_delete_confirm),
             onDismiss = onDismiss,
             onConfirm = onDelete,
             onClickFeedback = { haptics.selection() },

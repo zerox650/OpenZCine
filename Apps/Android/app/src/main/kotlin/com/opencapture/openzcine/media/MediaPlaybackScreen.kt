@@ -150,7 +150,7 @@ internal fun MediaPlaybackScreen(
     val operations = nikonPlaybackOperations(playerContext, coordinator, capture, captureDeletion,
         transferAvailable = { currentTransfer.value }, cover = cover, prepared = { prepared },
         onToggleFavorite = onToggleFavorite, rating = playbackRating(cameraTransferAvailable, connectionOwner,
-            onRatingMirrored, onCaptureRatingCompletion, onRatingDiagnostic))
+            onRatingMirrored, onCaptureRatingCompletion, onRatingDiagnostic, context))
     var closing by remember(playerContext) { mutableStateOf(false) }
     fun close() {
         if (closing) return

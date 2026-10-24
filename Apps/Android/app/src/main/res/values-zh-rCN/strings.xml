@@ -824,4 +824,39 @@
     <string name="conn_fail_saved_profile_required">此相机需要与此手机重新配对。请使用“配对新的相机”，或为此手机创建“连接到电脑”配置文件。</string>
     <string name="conn_fail_non_numeric_host">无法在相机网络上找到相机的地址。请重新加入相机的 Wi-Fi 后重试。</string>
     <string name="conn_fail_unreachable">无法连接到相机。请检查 Wi-Fi 后重试。</string>
+
+    <!-- 媒体浏览、空状态与删除文案（MediaBrowseScreen、MediaDeletion） -->
+    <string name="media_browse_incomplete">无法完整列出相机媒体。</string>
+    <string name="media_browse_stopped_after">列表已在 %1$d %2$s后停止。请重试以加载完整媒体库。</string>
+    <string name="media_browse_reconnect">请重新连接相机后再列出媒体。</string>
+    <string name="media_core_not_bundled">此应用构建未捆绑相机核心。</string>
+    <string name="media_empty_camera_card">相机存储卡上发现的片段会显示在这里。</string>
+    <string name="media_empty_opened">你打开过的完整相机媒体会安全地显示在这里。</string>
+    <string name="media_browse_failed_title">无法列出媒体</string>
+    <string name="media_delete_clip_title">从相机删除此片段？</string>
+    <string name="media_delete_photo_title">从相机存储卡删除此照片？</string>
+    <string name="media_count_noun_one">个项目</string>
+    <string name="media_count_noun_other">个项目</string>
+
+    <!-- 媒体加载状态与分享元数据文案（MediaBrowseScreen） -->
+    <string name="media_loading_camera_title">正在列出相机上的片段…</string>
+    <string name="media_loading_camera_detail">正在查询存储卡…</string>
+    <string name="media_loading_local_title">正在打开本地媒体库…</string>
+    <string name="media_loading_local_detail">正在检查已缓存的完整条目…</string>
+    <string name="media_empty_camera_title">暂无片段</string>
+    <string name="media_empty_local_title">暂无完整缓存媒体</string>
+    <string name="media_share_unknown_date">日期未知</string>
+    <string name="media_share_unknown_size">大小未知</string>
+    <string name="media_share_more_selected">另有 %1$d 个%2$s被选中</string>
+
+    <!-- 删除确认与评分失败文案（MediaDeletion） -->
+    <string name="media_delete_clip_named">要从相机存储卡删除 %1$s 吗？</string>
+    <string name="media_delete_items_count">要从相机存储卡删除 %1$d 个项目吗？</string>
+    <string name="media_delete_pair_note">成对的 RAW 与 JPEG 文件都会被删除。</string>
+    <string name="media_delete_master_note">相机主文件将连同其代理一起删除。</string>
+    <string name="media_delete_backup_note">另一张存储卡上的备份副本也会被删除。</string>
+    <string name="rating_refusal_no_response">评分未保存——相机没有响应。</string>
+    <string name="rating_refusal_access_denied">评分未保存——相机拒绝（访问被拒 %1$s）。在此模式下相机可能不接受评分。</string>
+    <string name="rating_refusal_coded">评分未保存——相机拒绝（%1$s）。</string>
+    <string name="media_delete_confirm">删除</string>
 </resources>

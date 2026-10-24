@@ -70,6 +70,7 @@ import com.opencapture.openzcine.ExposureAssistCameraInput
 import com.opencapture.openzcine.FeedLutSelection
 import com.opencapture.openzcine.LiveDesign
 import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import com.opencapture.openzcine.bridge.SwiftCore
 import com.opencapture.opencine.cameracontrols.chromeClickable
 import com.opencapture.openzcine.chromeStyle
@@ -103,26 +104,39 @@ internal sealed interface BrowseState {
 }
 
 /** A truncated camera enumeration is a failed catalog, never a complete partial listing. */
-internal fun incompleteCameraBrowseState(partialClips: List<NikonMediaClipRecord>): BrowseState.Failed {
+internal fun incompleteCameraBrowseState(
+    partialClips: List<NikonMediaClipRecord>,
+    context: Context? = null,
+): BrowseState.Failed {
     if (partialClips.isEmpty()) {
-        return BrowseState.Failed("Couldn't finish listing camera media.")
+        return BrowseState.Failed(lstr(context, R.string.media_browse_incomplete))
     }
-    val itemLabel = if (partialClips.size == 1) "item" else "items"
+    val itemLabel =
+        if (partialClips.size == 1) lstr(context, R.string.media_count_noun_one)
+        else lstr(context, R.string.media_count_noun_other)
     return BrowseState.Failed(
-        "Listing stopped after ${partialClips.size} $itemLabel. Retry to load the complete library.",
+        lstr(context, R.string.media_browse_stopped_after, partialClips.size, itemLabel),
     )
 }
 
 /** Privacy-bounded details attached to Android's share intent only when requested. */
-internal fun mediaDeliveryMetadataSummary(clips: List<NikonMediaClipRecord>): String {
+internal fun mediaDeliveryMetadataSummary(
+    clips: List<NikonMediaClipRecord>,
+    context: Context? = null,
+): String {
     val lines =
         clips.take(MAXIMUM_SHARE_METADATA_ITEMS).map { clip ->
             val filename = clip.filename.take(MAXIMUM_SHARE_METADATA_FILENAME_CHARACTERS)
-            val date = clip.captureDate.ifBlank { "unknown date" }.take(32)
-            "$filename · $date · ${clip.sizeLabel.ifEmpty { "unknown size" }}"
+            val date = clip.captureDate.ifBlank { lstr(context, R.string.media_share_unknown_date) }.take(32)
+            "$filename · $date · ${clip.sizeLabel.ifEmpty { lstr(context, R.string.media_share_unknown_size) }}"
         }.toMutableList()
     val omitted = clips.size - lines.size
-    if (omitted > 0) lines += "+$omitted more selected ${if (omitted == 1) "item" else "items"}"
+    if (omitted > 0) {
+        val noun =
+            if (omitted == 1) lstr(context, R.string.media_count_noun_one)
+            else lstr(context, R.string.media_count_noun_other)
+        lines += lstr(context, R.string.media_share_more_selected, omitted, noun)
+    }
     return lines.joinToString(separator = "\n")
 }
 
@@ -379,8 +393,10 @@ internal fun MediaBrowseScreen(
             // The offline library opens its first clip too (a staged `ReviewLaunch(screen: .playback)`).
             stageAutoPlay(actual, actual.state.value.records)
         } else if (connectedSource == null) {
-            state = BrowseState.Failed(if (!effectiveCameraConnected) "Reconnect the camera to list media."
-                else "Camera core is not bundled in this build.")
+            state = BrowseState.Failed(
+                if (!effectiveCameraConnected) context.getString(R.string.media_browse_reconnect)
+                else context.getString(R.string.media_core_not_bundled),
+            )
         } else {
             offlineClipOwners = emptyMap(); browseStorageSlots = null
             libraryCodec?.beginListing()
@@ -395,7 +411,7 @@ internal fun MediaBrowseScreen(
                 } else emptyList()
                 if (binding != null) browseStorageSlots = connectedSource.storageSlots(binding)
                 state = if (snapshot.fetching && snapshot.catalogPageCount == 0) BrowseState.Loading
-                    else if (snapshot.note != null && !snapshot.fetching) incompleteCameraBrowseState(clips)
+                    else if (snapshot.note != null && !snapshot.fetching) incompleteCameraBrowseState(clips, context)
                     else BrowseState.Loaded(clips, isLoadingMore = snapshot.fetching)
                 if (!snapshot.fetching) stageAutoPlay(actual, snapshot.records)
             }
@@ -479,7 +495,7 @@ internal fun MediaBrowseScreen(
             NikonMediaContentKind.UNSUPPORTED -> "${record.payload.clip.filename} has no Android preview yet."
             else -> null
         } },
-        deletionMessage = { rows -> deleteConfirmationMessage(loadedClips, rows.map { it.payload.clip }, ::ownerCameraID) },
+        deletionMessage = { rows -> deleteConfirmationMessage(loadedClips, rows.map { it.payload.clip }, ::ownerCameraID, context) },
         acceptedDeletion = MonitorMediaGalleryDeletion(
             capture = { rows ->
                 val targets = NikonMediaDeletionPlan.of(loadedClips, rows.map { it.payload.clip }, ::ownerCameraID).targets
@@ -565,15 +581,20 @@ internal fun MediaBrowseScreen(
                 storage = mediaGalleryStorageValues(visibleStorageSlots, filters.storageId),
                 empty = when (val load = state) {
                     BrowseState.Loading -> MonitorMediaGalleryEmpty(
-                        if (librarySource == MediaLibrarySource.CAMERA) "Listing clips on camera…" else "Opening local library…",
-                        if (librarySource == MediaLibrarySource.CAMERA) "Querying card storage…" else "Checking persisted complete cache entries…",
+                        if (librarySource == MediaLibrarySource.CAMERA) stringResource(R.string.media_loading_camera_title)
+                        else stringResource(R.string.media_loading_local_title),
+                        if (librarySource == MediaLibrarySource.CAMERA) stringResource(R.string.media_loading_camera_detail)
+                        else stringResource(R.string.media_loading_local_detail),
                         loading = true,
                     )
-                    is BrowseState.Failed -> MonitorMediaGalleryEmpty("Couldn't list media", load.message, retry = true)
+                    is BrowseState.Failed -> MonitorMediaGalleryEmpty(
+                        stringResource(R.string.media_browse_failed_title), load.message, retry = true,
+                    )
                     is BrowseState.Loaded -> MonitorMediaGalleryEmpty(
-                        if (librarySource == MediaLibrarySource.CAMERA) "No clips yet" else "No complete cached media",
-                        if (librarySource == MediaLibrarySource.CAMERA) "Clips appear here as they're discovered on the card."
-                        else "Complete camera media you have opened appears here safely.",
+                        if (librarySource == MediaLibrarySource.CAMERA) stringResource(R.string.media_empty_camera_title)
+                        else stringResource(R.string.media_empty_local_title),
+                        if (librarySource == MediaLibrarySource.CAMERA) stringResource(R.string.media_empty_camera_card)
+                        else stringResource(R.string.media_empty_opened),
                     )
                 },
             )
@@ -664,8 +685,8 @@ internal fun MediaBrowseScreen(
                                 if (authority == null || !authority.isCurrent || !capturedAction.sourceIsCurrent) null else {
                                     MonitorOperatorPlaybackDeletionRequest(
                                         com.opencapture.opencine.media.MonitorPlaybackDeletionConfirmation(
-                                            title = "Delete clip from camera?",
-                                            message = deleteConfirmationMessage(selected, plan)), authority,
+                                            title = context.getString(R.string.media_delete_clip_title),
+                                            message = deleteConfirmationMessage(selected, plan, context)), authority,
                                         perform = perform@{
                                             fun accepted() = librarySource == MediaLibrarySource.CAMERA && effectiveCameraConnected &&
                                                 library === actual && connectionOwner == nativeOwner &&

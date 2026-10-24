@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.opencapture.opencine.appkit.*
 import com.opencapture.opencine.cameracontrols.MonitorOperatorPhotoScreen
 import com.opencapture.opencine.nikon.NikonMediaClipRecord
@@ -51,6 +52,7 @@ internal fun MediaStillViewer(
     onShare: ((MonitorMediaRecord<NikonLibraryClip>) -> Unit)? = null,
     onClose: () -> Unit,
 ) {
+    val context = LocalContext.current
     val io = remember(library, record.asset.id, admission, cacheStore, connectionOwner) {
         NikonStillPictureIO(cacheStore, cameraTransferAvailable, connectionOwner, onResolvedObjectSize)
     }
@@ -103,7 +105,7 @@ internal fun MediaStillViewer(
                     is RatingWriteResult.Refused -> {
                         onRatingDiagnostic(if (outcome.code == 0x2013) AndroidDiagnosticEvent.RATING_WRITE_REFUSED_ACCESS_DENIED
                             else AndroidDiagnosticEvent.RATING_WRITE_REFUSED)
-                        MonitorMediaPictureRatingResult.Refused(ratingRefusalMessage(outcome.code))
+                        MonitorMediaPictureRatingResult.Refused(ratingRefusalMessage(outcome.code, context))
                     }
                 }
             }
