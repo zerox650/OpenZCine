@@ -602,7 +602,7 @@ class MainActivity : ComponentActivity() {
                         camera.routes.any { it.extras[NikonSavedRecordsV0.Extra.PROFILE_ID] == activeSavedCamera?.profileID }
                     } ?: SavedCamera(
                         id = "monitor:${common.id}", integration = IntegrationID("nikon"),
-                        advertisedName = activeSavedCamera?.cameraName ?: stringResource(R.string.relay_device_name_default), model = "")
+                        advertisedName = activeSavedCamera?.cameraName ?: applicationContext.getString(R.string.relay_device_name_default), model = "")
                     val connected = ConnectedCamera(saved, common, shellSessions.services(native, common))
                     if (borrowed != null) {
                         shell.borrow(connected) {
@@ -868,7 +868,7 @@ class MainActivity : ComponentActivity() {
                             watchOnCameraApNoticeVisible = true
                             return@join
                         }
-                        relayBroadcastController.stop(notifyReason = stringResource(R.string.relay_broadcast_ended))
+                        relayBroadcastController.stop(notifyReason = applicationContext.getString(R.string.relay_broadcast_ended))
                         relayBroadcastEnabled = false
                         val previous = watchController
                         if (previous != null) connectionScope.launch { previous.stop() }
@@ -951,7 +951,7 @@ class MainActivity : ComponentActivity() {
                             // session leaves composition.
                             if (monitorSession === exitingSession) {
                                 relayBroadcastController.stop(
-                                    notifyReason = stringResource(R.string.relay_broadcast_ended))
+                                    notifyReason = applicationContext.getString(R.string.relay_broadcast_ended))
                                 relayBroadcastEnabled = false
                                 shell.close()
                                 monitorSession = null
@@ -1255,7 +1255,7 @@ class MainActivity : ComponentActivity() {
                                                 }
                                             } else {
                                                 relayBroadcastController.stop(
-                                                    notifyReason = stringResource(R.string.relay_broadcast_ended))
+                                                    notifyReason = applicationContext.getString(R.string.relay_broadcast_ended))
                                                 relayBroadcastEnabled = false
                                             }
                                         },
@@ -1612,7 +1612,7 @@ class MainActivity : ComponentActivity() {
                     GyroLogsScreen(gyroState,
                         onShare = { entry ->
                             shareGyroLog(this@MainActivity, entry, connectionScope) {
-                                Toast.makeText(this@MainActivity, it.message ?: stringResource(R.string.gyro_share_failed), Toast.LENGTH_LONG).show()
+                                Toast.makeText(this@MainActivity, it.message ?: applicationContext.getString(R.string.gyro_share_failed), Toast.LENGTH_LONG).show()
                             }
                         }, onDelete = gyroCapture::delete,
                         onClose = { gyroLogsPresented = false })

@@ -13,6 +13,7 @@ import com.opencapture.openzcine.gyro.GyroStatusPill
 import com.opencapture.monitorui.MonitorIcon
 import com.opencapture.opencine.cameracontrols.*
 import android.os.Build
+import android.content.Context
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
@@ -749,7 +750,7 @@ internal fun MonitorScreen(
                 val editor = commonEditor
                 if (editor?.key == value.key) {
                     if (!commonControl.commit(value, editor, label)) {
-                        commonControl.onNote("The camera changed. Reopen this control.")
+                        commonControl.onNote(appContext.getString(R.string.monitor_note_camera_changed))
                     }
                 } else {
                     commonControl.set(value, label)
@@ -1004,6 +1005,7 @@ internal fun MonitorScreen(
             applyCameraControl = applyCameraControl,
             onOptimisticShutterLocked = { optimisticShutterLocked = it },
             shutterLockedOverride = effectiveShutterLocked,
+            context = appContext,
         )
     }
     // The shared record button owns its confirmation; while it is open the watch and the media
@@ -1940,9 +1942,10 @@ internal fun MonitorScreen(
         val usageStore = remember(appContext) { com.opencapture.opencine.appkit.MonitorToolUsagePreferences(
             appContext.getSharedPreferences("assist", android.content.Context.MODE_PRIVATE), "assistToolUsage.v1") }
         var usage by remember(usageStore) { mutableStateOf(usageStore.value) }
+        val instantPlaybackTitle = stringResource(R.string.monitor_instant_playback)
         val palette = liveAssistChips.map { chip ->
             val tool = (chip as? NikonAssistChip.Tool)?.tool
-            MonitorOperatorPaletteItem(chip.id, tool?.title ?: "Instant Playback", tool?.chipLabel ?: "PLAY", tool,
+            MonitorOperatorPaletteItem(chip.id, tool?.title ?: instantPlaybackTitle, tool?.chipLabel ?: "PLAY", tool,
                 if (tool != null) assists.shared.isOn(tool) else assists.instantReview,
                 toggle = { haptics.selection(); if (tool != null) assists.shared.toggle(tool)
                     else assists.instantReview = !assists.instantReview }, hasOptions = tool?.nikonHasOptions == true,
@@ -1963,7 +1966,7 @@ internal fun MonitorScreen(
             // Remaining shots read as a picture glyph and the count, which keeps the portrait
             // header's telemetry clear of the camera cutout; the storage flip keeps the card.
             val shots = cameraProperties.shotsRemaining.takeIf { capacity == null }
-            MonitorOperatorLiveReadout<String, MonitorDisplaySection>("shots", "Shots remaining",
+            MonitorOperatorLiveReadout<String, MonitorDisplaySection>("shots", stringResource(R.string.monitor_shots_remaining),
                 if (capacity != null) {
                     val free = if (isPortrait) MonitorStorageReadoutFormat.wholeUnitCapacity(capacity.freeBytes)
                         else capacity.free
@@ -1972,8 +1975,10 @@ internal fun MonitorScreen(
                 MonitorDisplaySection.TIMECODE, action = { photoPillShowsStorage = !photoPillShowsStorage },
                 icon = if (capacity == null) MonitorIcon.IMAGE else null,
                 accessibilityLabel = if (capacity != null) null
-                    else shots?.let(MonitorTextFormat::shotsRemainingAccessibilityLabel) ?: "Shots remaining unknown")
-        } else if (mounted(MonitorDisplaySection.STORAGE)) MonitorOperatorLiveReadout("storage", "Media remaining",
+                    else shots?.let(MonitorTextFormat::shotsRemainingAccessibilityLabel)
+                        ?: stringResource(R.string.monitor_shots_remaining_unknown))
+        } else if (mounted(MonitorDisplaySection.STORAGE)) MonitorOperatorLiveReadout("storage",
+            stringResource(R.string.monitor_media_remaining),
             mediaLabel(isPortrait), MonitorDisplaySection.STORAGE, action = { prefersMediaDuration = !prefersMediaDuration }) else null
         val resolutionKind = if (isPhotographyMode) MonitorPickerKind.SIZE else MonitorPickerKind.RESOLUTION
         val codecKind = if (isPhotographyMode) MonitorPickerKind.QUALITY else MonitorPickerKind.CODEC
@@ -1982,7 +1987,8 @@ internal fun MonitorScreen(
             if (picker.kind == MonitorPickerKind.QUALITY) 380f else 300f,
             chrome = if (picker.kind in ladderKinds) MonitorOperatorCameraPanelChrome.SHARED_SHEET else MonitorOperatorCameraPanelChrome.CONTENT,
             // Codec and colour are one popup: the codec picker carries the active codec's tones.
-            title = if (picker.kind == MonitorPickerKind.CODEC && codecColor.showsColor) "CODEC · COLOR" else picker.title,
+            title = if (picker.kind == MonitorPickerKind.CODEC && codecColor.showsColor)
+                stringResource(R.string.monitor_codec_color_title) else picker.title,
             subtitle = picker.subtitle) }
             ?: activeCommandControl?.let { request -> MonitorOperatorCameraPanel("command:${request.control.name}",
                 false, chrome = MonitorOperatorCameraPanelChrome.CONTENT, title = request.title,
@@ -2086,7 +2092,7 @@ internal fun MonitorScreen(
                         else recordingFormat?.let(MonitorCapturePresentation::recordingLabel),
                         MonitorDisplaySection.FORMAT, action = { openSharedPicker(resolutionKind) }),
                 color = if (isPhotographyMode || !mounted(MonitorDisplaySection.COLOR)) null else
-                    MonitorOperatorLiveReadout(COLOR_READOUT_ID, "Color", codecColor.selectedColorChoice?.label ?: "--",
+                    MonitorOperatorLiveReadout(COLOR_READOUT_ID, stringResource(R.string.camera_color_title), codecColor.selectedColorChoice?.label ?: "--",
                         MonitorDisplaySection.COLOR, action = { openSharedPicker(MonitorPickerKind.CODEC) }),
                 recordingSection = MonitorDisplaySection.REC_READOUT,
                 timecodeSection = MonitorDisplaySection.TIMECODE,
@@ -2521,6 +2527,7 @@ internal fun toggleShutterLockOnCamera(
     applyCameraControl: (CommandControlRequest, String) -> Unit,
     onOptimisticShutterLocked: ((Boolean) -> Unit)? = null,
     shutterLockedOverride: Boolean? = null,
+    context: Context? = null,
 ) {
     // Need a shutter cell so we only long-press when shutter chrome is present.
     if (captureSettings.none { it.kind == MonitorPickerKind.SHUTTER }) return
@@ -2535,7 +2542,7 @@ internal fun toggleShutterLockOnCamera(
     onOptimisticShutterLocked?.invoke(next == "Locked")
     applyCameraControl(
         CommandControlRequest(
-            title = "Shutter Lock",
+            title = lstr(context, R.string.camera_shutter_lock),
             control = CameraControl.SHUTTER_LOCK,
             currentValue = if (locked) "Locked" else "Unlocked",
             options = options,

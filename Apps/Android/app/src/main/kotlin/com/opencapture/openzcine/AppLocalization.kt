@@ -33,6 +33,8 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.media_camera_open_failed to "Camera %1\$s could not be opened.",
     R.string.relay_join_refused to "The broadcast refused this device.",
     R.string.relay_join_disconnected to "The broadcast disconnected.",
+    R.string.camera_color_title to "Color",
+    R.string.camera_shutter_lock to "Shutter Lock",
     R.string.still_release_refused to "The camera refused the still release.",
     R.string.still_release_failed to "The camera did not accept the still release.",
     R.string.rating_refusal_no_response to "Rating not saved — the camera didn't respond.",

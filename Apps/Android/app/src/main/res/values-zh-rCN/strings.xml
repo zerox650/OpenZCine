@@ -1054,4 +1054,14 @@
     <string name="watcher_network_instructions">加入与分享设备相同的常规 Wi-Fi。观看前请先退出相机自带的 Wi-Fi，它可能阻挡设备间的通信。</string>
     <string name="watcher_no_feeds_message">此网络上没有共享画面。请确认分享已开启、两台设备可以互相访问。如弹出提示，请允许“本地网络”权限。</string>
     <string name="gyro_share_failed">无法分享陀螺仪日志。</string>
+    <string name="camera_focus_scrub_help">在画面旁显示手动对焦拨盘。</string>
+    <string name="camera_mf_drive_description">手动对焦驱动。向上拖向无限远，向下拖向近处。</string>
+    <string name="camera_color_title">色彩</string>
+    <string name="monitor_note_camera_changed">相机已变更。请重新打开此控制项。</string>
+    <string name="monitor_instant_playback">即时回放</string>
+    <string name="monitor_shots_remaining">剩余可拍张数</string>
+    <string name="monitor_shots_remaining_unknown">剩余可拍张数未知</string>
+    <string name="monitor_media_remaining">剩余媒体空间</string>
+    <string name="monitor_codec_color_title">CODEC · 色彩</string>
+    <string name="camera_shutter_lock">快门锁定</string>
 </resources>

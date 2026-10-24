@@ -1,5 +1,7 @@
 package com.opencapture.openzcine
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import com.opencapture.opencine.cameracontrols.CaptureCodecColorSectionView
 import com.opencapture.opencine.cameracontrols.CaptureCodecColorTabs
 import com.opencapture.opencine.cameracontrols.PrefToggle
@@ -990,6 +992,7 @@ internal fun MonitorControlPickerPanel(
     codecColor: CaptureCodecColorChoices? = null,
 ) {
     val writeEnabled = controlsEnabled && com.opencapture.opencine.appkit.LocalMonitorCaptureCommandEnabled.current
+    val context = LocalContext.current
     if (picker.kind == MonitorPickerKind.QUALITY) {
         // Image quality is a dual-drum pair, not a value wheel (iOS `QualityPickerPanel`).
         QualityPickerPanelBody(
@@ -1037,7 +1040,7 @@ internal fun MonitorControlPickerPanel(
                         enabled = writeEnabled && codecColor.colorEditable,
                     ) { id ->
                         val label = codecColor.colors.firstOrNull { it.id == id }?.label ?: return@CaptureCodecColorTabs
-                        onSelect(movieToneRequest(codecColor), label)
+                        onSelect(movieToneRequest(codecColor, context), label)
                     }
                 }
             }
@@ -1046,9 +1049,12 @@ internal fun MonitorControlPickerPanel(
 }
 
 /** The typed write for a tone pick: Swift validates it against the active codec's offered tones. */
-internal fun movieToneRequest(choices: CaptureCodecColorChoices): CommandControlRequest =
+internal fun movieToneRequest(
+    choices: CaptureCodecColorChoices,
+    context: Context? = null,
+): CommandControlRequest =
     CommandControlRequest(
-        title = "Color",
+        title = lstr(context, R.string.camera_color_title),
         control = CameraControl.MOVIE_TONE,
         currentValue = choices.selectedColorChoice?.label.orEmpty(),
         options = choices.colors.filter { it.isEditable }.map { it.label },
@@ -1059,7 +1065,7 @@ internal fun movieToneRequest(choices: CaptureCodecColorChoices): CommandControl
 private fun MfScrubToggleRow(enabled: Boolean, onToggle: () -> Unit) {
     PrefToggle(
         title = stringResource(R.string.camera_focus_scrub_toggle),
-        help = "Shows a manual focus dial beside the picture.",
+        help = stringResource(R.string.camera_focus_scrub_help),
         checked = enabled,
         enabled = true,
         onCheckedChange = { onToggle() },
@@ -1110,6 +1116,7 @@ internal fun MFDriveStrip(
     // visibly react to touch even before the lens moves — a scrub against a
     // busy body otherwise reads as dead input.
     var dragging by remember { mutableStateOf(false) }
+    val driveDescription = stringResource(R.string.camera_mf_drive_description)
     Box(
         modifier
             .alpha(if (enabled) 1f else 0.55f)
@@ -1137,8 +1144,7 @@ internal fun MFDriveStrip(
             // fell through would move the AF point under the scrub.
             .pointerInput(Unit) { detectTapGestures(onTap = {}) }
             .semantics {
-                contentDescription =
-                    "Manual focus drive. Drag up toward infinity or down toward near."
+                contentDescription = driveDescription
             },
         contentAlignment = Alignment.Center,
     ) {

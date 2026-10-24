@@ -1054,4 +1054,14 @@
     <string name="watcher_network_instructions">Join the same regular Wi-Fi as the sharing device. Leave the camera\'s own Wi-Fi before watching; it may block traffic between devices.</string>
     <string name="watcher_no_feeds_message">No shared feeds on this network. Check that sharing is on and both devices can reach each other. Allow Local Network if asked.</string>
     <string name="gyro_share_failed">Could not share gyro log.</string>
+    <string name="camera_focus_scrub_help">Shows a manual focus dial beside the picture.</string>
+    <string name="camera_mf_drive_description">Manual focus drive. Drag up toward infinity or down toward near.</string>
+    <string name="camera_color_title">Color</string>
+    <string name="monitor_note_camera_changed">The camera changed. Reopen this control.</string>
+    <string name="monitor_instant_playback">Instant Playback</string>
+    <string name="monitor_shots_remaining">Shots remaining</string>
+    <string name="monitor_shots_remaining_unknown">Shots remaining unknown</string>
+    <string name="monitor_media_remaining">Media remaining</string>
+    <string name="monitor_codec_color_title">CODEC · COLOR</string>
+    <string name="camera_shutter_lock">Shutter Lock</string>
 </resources>
