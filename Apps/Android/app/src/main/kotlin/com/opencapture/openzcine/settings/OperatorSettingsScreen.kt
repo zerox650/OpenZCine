@@ -12,6 +12,7 @@ import com.opencapture.monitorui.settings.MonitorLinkHealthScale
 import com.opencapture.monitorui.settings.MonitorSupportAction
 import com.opencapture.monitorui.settings.MonitorSupportSettings
 import com.opencapture.opencine.appkit.diagnostics.settingsStatus
+import com.opencapture.openzcine.AppLanguage
 import com.opencapture.openzcine.NikonAssists
 import com.opencapture.monitorui.MonitorAssistTool
 import com.opencapture.opencine.cameracontrols.*
@@ -35,6 +36,8 @@ import com.opencapture.monitorui.settings.MonitorCacheSettings
 import com.opencapture.monitorui.settings.MonitorProjectLegalSettings
 import com.opencapture.monitorui.settings.MonitorSettingsPage
 import com.opencapture.monitorui.settings.MonitorSettingsRowCard
+import com.opencapture.monitorui.settings.MonitorSettingsLanguageChoice
+import com.opencapture.monitorui.settings.MonitorSettingsLanguageSource
 import com.opencapture.monitorui.settings.MonitorSettingsSwitchInlineRow
 import com.opencapture.monitorui.settings.MonitorSettingsTab
 import android.content.Context
@@ -346,10 +349,32 @@ internal fun OperatorSettingsScreen(
             stringResource(R.string.settings_info_protocol_help),
             stringResource(R.string.settings_info_version_help)),
         gyro = gyro,
+        language = languageSource(),
     )
     // Seeds the session once per requested landing tab, before the first frame draws.
     remember(operatorSession, initialTab) { initialTab?.also { operatorSession.settingsTab = it } }
     MonitorOperatorSettingsScreen(configuration, assistSections, display, operatorSession, cacheOwner)
+}
+
+/**
+ * The app language: the stored override with the languages this build ships, each written in its
+ * own language so it reads the same whichever one is showing. Choosing one stores it and relaunches
+ * the app, because the retained owners keep the context they were built with ([AppLanguage]).
+ */
+@Composable
+private fun languageSource(): MonitorSettingsLanguageSource {
+    val context = LocalContext.current
+    val followSystem = stringResource(R.string.settings_language_follow_system)
+    return MonitorSettingsLanguageSource(
+        selection = AppLanguage.stored(context).takeIf { it.isNotBlank() },
+        choices = listOf(
+            MonitorSettingsLanguageChoice(null, followSystem),
+            MonitorSettingsLanguageChoice(AppLanguage.ENGLISH, stringResource(R.string.settings_language_english)),
+            MonitorSettingsLanguageChoice(
+                AppLanguage.CHINESE_SIMPLIFIED, stringResource(R.string.settings_language_chinese)),
+        ),
+        select = { tag -> AppLanguage.save(context, tag); AppLanguage.restart(context) },
+    )
 }
 
 /** Actual broadcast service observations and admitted native actions. */

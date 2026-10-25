@@ -9,6 +9,7 @@ import com.opencapture.opencine.appkit.MonitorLaunchSplash
 import com.opencapture.opencine.appkit.MonitorAutomaticReportsOffer
 import com.opencapture.opencine.appkit.MonitorReportsOffer
 import com.opencapture.opencine.appkit.MonitorLaunchBrand
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.nsd.NsdManager
@@ -193,6 +194,11 @@ class MainActivity : ComponentActivity() {
     /** The session and its owners, kept across recreation (an undeclared configuration change). */
     internal lateinit var root: AppRoot
         private set
+
+    /** The operator's language override, applied before any resource is read (see [AppLanguage]). */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition { !launch.firstFrameDrawn }
