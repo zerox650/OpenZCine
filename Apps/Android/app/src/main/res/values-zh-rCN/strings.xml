@@ -776,6 +776,9 @@
     <string name="help_link_held_by">相机当前接收指令来自哪台设备。</string>
     <string name="help_link_stream_preset">将尼康实时画面码流尺寸与压缩等级组合为三个面向操作员的选择。</string>
     <string name="help_link_quality_bias">将所选码流预设偏向更小的帧或更多的图像细节。</string>
+    <string name="help_controls_keep_awake">本应用处于活动状态时保持屏幕常亮。关闭后改用设备自身的自动锁屏设置。设备过热时系统仍可能降低屏幕亮度。</string>
+    <string name="help_system_automatic_reports">可选：通过 Sentry 向 OpenCapture 发送崩溃、卡死、实时画质报告与会话健康计数。默认关闭，随时可关闭且不影响应用功能。上传会等到你离开相机 Wi-Fi 之后进行。自动报告不含任何图像，不含视频素材与 GPS 位置。Sentry 会收到连接 IP。详见下方「报告隐私」。</string>
+    <string name="legal_reliability_reports_privacy">可选可靠性报告\n经你同意后，已配置的构建版本会通过 Sentry 发送崩溃、卡死与画质诊断信息、应用/系统/设备版本以及会话健康计数，并附带一个随机安装标识符——它在你选择加入时创建、在退出时删除。自动报告不含任何图像，不含视频素材、截图、原始相机数据包或 GPS 位置。Sentry 会收到连接 IP。事件存储在德国。部分供应商处理可能跨境进行。\n你可以随时在「操作员设置 &gt; 系统」中关闭上报，且不影响应用功能。关闭会清空待上传的 SDK 数据并删除安装标识符，但不会删除已接收的报告。如需删除请私下联系我们。网站政策说明了数据保留、传输与你的权利。</string>
     <string name="help_controls_auto_rotate_feed">当相机侧放或倒置时，将监看画面摆正。关闭则保持相机原生方向。仅显示——录制永远不会受影响。</string>
     <string name="help_link_feed_upscaler">实时画面帧如何放大以填满面板。相机发送的像素远少于面板像素，因此总会有某个环节执行此操作；如今 Android 运行普通采样，硬件加速路径尚未构建。</string>
     <string name="help_link_feed_noise_reduction">将实时画面与前后帧进行平均以减少传感器噪点。Android 上尚未构建；无论哪种方式录制都不会受影响。</string>

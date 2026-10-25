@@ -315,7 +315,7 @@ internal fun OperatorSettingsScreen(
         { settings.recordConfirmationEnabled.value = it }, settings.hapticsEnabled.value,
         { settings.hapticsEnabled.value = it }, settings.keepScreenAwake.value,
         { settings.keepScreenAwake.value = it },
-        MonitorSettingsCopy.keepScreenAwake,
+        stringResource(R.string.help_controls_keep_awake),
         shutter = MonitorSettingsRemoteShutter.mediaButtons(settings.mediaRemoteShutterEnabled.value) {
             settings.mediaRemoteShutterEnabled.value = it
         },
@@ -416,7 +416,7 @@ private fun supportSource(actions: SystemSettingsActions, onReportProblem: () ->
     var automaticReports by remember { mutableStateOf(AppDiagnostics.reporting.isOptedIn) }
     val report by AppDiagnostics.manualReport.snapshot.collectAsState()
     return MonitorSettingsSupportSource(onReportProblem, automaticReports, AppDiagnostics.reporting.isAvailable,
-        MonitorSettingsCopy.automaticReports, stringResource(R.string.help_system_automatic_reports_unavailable),
+        stringResource(R.string.help_system_automatic_reports), stringResource(R.string.help_system_automatic_reports_unavailable),
         { automaticReports = it; AppDiagnostics.reporting.setConsent(it) },
         stringResource(R.string.system_report_problem), stringResource(R.string.help_system_report_problem),
         stringResource(R.string.action_report),

@@ -19,7 +19,7 @@ import com.opencapture.openzcine.lstr
 internal fun zLegalDocuments(context: Context? = null): MonitorLegalDocuments = MonitorLegalDocuments(
     wordmark = "OPENZCINE",
     privacy = MonitorLegalDocument.Text(
-        lstr(context, R.string.z_legal_privacy_body, MonitorSettingsCopy.reliabilityReportsPrivacy),
+        lstr(context, R.string.z_legal_privacy_body, lstr(context, R.string.legal_reliability_reports_privacy)),
     ),
     terms = MonitorLegalDocument.Text(lstr(context, R.string.z_legal_terms_body)),
     licenses = MonitorLegalDocument.bundledText(listOf(

@@ -260,6 +260,12 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.picker_speed to "Speed",
     R.string.picker_aperture to "Aperture",
     R.string.instant_playback to "Instant playback",
+    R.string.help_controls_keep_awake to
+        "Keeps the screen awake while this app is active. Turn off to use the device's normal auto-lock setting. The system may still dim the screen when the device is hot.",
+    R.string.help_system_automatic_reports to
+        "Optional: send crash, hang, live-feed reports and session health counts to OpenCapture through Sentry. Off by default. Turn off anytime without losing app features. Uploads wait until you leave camera Wi-Fi. Automatic reports exclude all images. No footage or GPS location. Sentry receives the connection IP. See Reporting Privacy below.",
+    R.string.legal_reliability_reports_privacy to
+        "Optional reliability reports\nWith your consent, configured builds send crash, hang and feed diagnostics, app/OS/device versions and session health counts through Sentry, with a random install identifier that is created when you opt in and deleted when you opt out. Automatic reports exclude all images. No footage, screenshots, raw camera packets or GPS location are included. Sentry receives the connection IP. Event storage uses Germany. Some provider processing may occur internationally.\nTurn reporting off in Operator Setup > System at any time without losing app features. This clears pending SDK uploads and deletes the install identifier, but does not delete reports already received. Contact us privately to request deletion. The website policy explains retention, transfers and your rights.",
 )
 
 /**
