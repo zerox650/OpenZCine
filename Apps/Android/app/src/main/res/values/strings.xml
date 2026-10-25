@@ -821,6 +821,7 @@
     <string name="conn_fail_saved_profile_required">This camera needs to pair with this phone again. Use Pair new camera, or create a Connect to PC profile for this phone.</string>
     <string name="conn_fail_non_numeric_host">Couldn\'t find the camera\'s address on its network. Rejoin the camera\'s Wi‑Fi and try again.</string>
     <string name="conn_fail_unreachable">Couldn\'t reach the camera. Check Wi‑Fi and try again.</string>
+    <string name="conn_fail_camera_silent">The camera didn\'t answer on this network. If it is asleep, wake it (half-press the shutter), check it is on the same Wi‑Fi as this device, then try again.</string>
 
     <!-- Media browse, empty states and deletion copy (MediaBrowseScreen, MediaDeletion) -->
     <string name="media_browse_incomplete">Couldn\'t finish listing camera media.</string>

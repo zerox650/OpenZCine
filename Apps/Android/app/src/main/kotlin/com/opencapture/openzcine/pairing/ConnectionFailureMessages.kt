@@ -39,6 +39,9 @@ internal fun friendlyCameraConnectionFailure(
             copy.text(R.string.conn_fail_non_numeric_host)
         // Never surface socket errors or PTP-IP packet dumps to the operator.
         CameraConnectionFailure.UNREACHABLE -> copy.text(R.string.conn_fail_unreachable)
+        // The wake dialled the network and the body never answered: asleep, or off this network.
+        // The remedy is the body, not the transport, so it gets its own guidance.
+        CameraConnectionFailure.CAMERA_SILENT -> copy.text(R.string.conn_fail_camera_silent)
         CameraConnectionFailure.BUSY, CameraConnectionFailure.OTHER, null ->
             detail?.trim()?.takeIf { it.isNotEmpty() && !it.looksTechnical() }
                 ?: copy.text(R.string.conn_fail_unreachable)
