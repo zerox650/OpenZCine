@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -207,15 +208,15 @@ internal fun photographyCaptureSettings(
     val modePicker =
         MonitorPickerPresentation(
             kind = MonitorPickerKind.MODE,
-            title = "MODE",
-            subtitle = "Exposure program",
+            title = lstr(context, R.string.picker_mode_title),
+            subtitle = lstr(context, R.string.picker_exposure_program),
             modes =
                 listOf(
                     MonitorPickerModePresentation(
-                        label = "Mode",
+                        label = lstr(context, R.string.picker_mode_label),
                         request =
                             CommandControlRequest(
-                                title = "MODE",
+                                title = lstr(context, R.string.picker_mode_title),
                                 control = CameraControl.EXPOSURE_MODE,
                                 currentValue = exposureMode?.takeIf { it in modeOptions }.orEmpty(),
                                 options = modeOptions,
@@ -223,10 +224,10 @@ internal fun photographyCaptureSettings(
                         applyValueOnActivate = false,
                     ),
                     MonitorPickerModePresentation(
-                        label = "U Mode",
+                        label = lstr(context, R.string.picker_u_mode),
                         request =
                             CommandControlRequest(
-                                title = "MODE",
+                                title = lstr(context, R.string.picker_mode_title),
                                 control = CameraControl.STILL_USER_MODE_PROGRAM,
                                 currentValue = userProgram.orEmpty(),
                                 options = userModeOptions,
@@ -253,17 +254,17 @@ internal fun photographyCaptureSettings(
     val allowsManualISO = StillPickerPolicy.allowsManualISO(exposureMode)
     fun isoMode(auto: Boolean) =
         MonitorPickerModePresentation(
-            label = if (auto) "Auto" else "Manual",
+            label = if (auto) lstr(context, R.string.picker_iso_auto) else lstr(context, R.string.picker_iso_manual),
             request =
                 CommandControlRequest(
-                    title = "ISO",
+                    title = lstr(context, R.string.picker_iso_title),
                     control = CameraControl.STILL_ISO,
                     currentValue = isoCurrent,
                     options = isoOptions,
                 ),
             activateRequest =
                 CommandControlRequest(
-                    title = "ISO",
+                    title = lstr(context, R.string.picker_iso_title),
                     control = CameraControl.STILL_ISO_AUTO,
                     currentValue = if (auto) "On" else "Off",
                     options = listOf("On", "Off"),
@@ -277,13 +278,13 @@ internal fun photographyCaptureSettings(
     val isoPicker =
         MonitorPickerPresentation(
             kind = MonitorPickerKind.ISO,
-            title = "ISO",
+            title = lstr(context, R.string.picker_iso_title),
             subtitle = "Sensitivity",
             modes = listOf(isoMode(auto = true), isoMode(auto = false)),
             // Camera truth: the body's Auto-ISO readback picks the open tab.
             initialModeIndex = if (properties.isoAuto == true) 0 else 1,
             popup = NikonCapturePopupState(
-                kind = NikonCapturePopupKind.STILL_ISO, title = "ISO", subtitle = "Sensitivity", modes = emptyList(),
+                kind = NikonCapturePopupKind.STILL_ISO, title = lstr(context, R.string.picker_iso_title), subtitle = "Sensitivity", modes = emptyList(),
                 circuitIndex = if (properties.isoAuto == true) 0 else 1, photography = true,
                 liveIso = properties.iso?.toInt(), stillAllowsManualIso = allowsManualISO, context = context,
             ),
@@ -334,15 +335,15 @@ internal fun photographyCaptureSettings(
     val drivePicker =
         MonitorPickerPresentation(
             kind = MonitorPickerKind.DRIVE,
-            title = "DRIVE",
-            subtitle = "Release mode",
+            title = lstr(context, R.string.picker_drive_title),
+            subtitle = lstr(context, R.string.picker_release_mode),
             modes =
                 listOf(
                     MonitorPickerModePresentation(
-                        label = "Drive",
+                        label = lstr(context, R.string.picker_drive_label),
                         request =
                             CommandControlRequest(
-                                title = "DRIVE",
+                                title = lstr(context, R.string.picker_drive_title),
                                 control = CameraControl.STILL_DRIVE,
                                 currentValue =
                                     properties.stillCaptureMode?.takeIf { it in driveOptions }.orEmpty(),
@@ -353,12 +354,12 @@ internal fun photographyCaptureSettings(
                         disabled = builtInTimerOn,
                     ),
                     MonitorPickerModePresentation(
-                        label = "Built-in Timer",
+                        label = lstr(context, R.string.picker_builtin_timer),
                         request =
                             CommandControlRequest(
                                 // The title routes this tab's writes to the
                                 // engage/restore logic, never a raw drive write.
-                                title = "Built-in Timer",
+                                title = lstr(context, R.string.picker_builtin_timer),
                                 control = CameraControl.STILL_DRIVE,
                                 currentValue =
                                     when (properties.stillCaptureMode) {
@@ -373,10 +374,10 @@ internal fun photographyCaptureSettings(
                         showsTimerShots = true,
                     ),
                     MonitorPickerModePresentation(
-                        label = "App-timer",
+                        label = lstr(context, R.string.picker_app_timer),
                         request =
                             CommandControlRequest(
-                                title = "App-timer",
+                                title = lstr(context, R.string.picker_app_timer),
                                 control = CameraControl.STILL_DRIVE,
                                 currentValue = photoTimerLabel(photoTimerDelaySeconds),
                                 options = StillPickerLadders.APP_TIMER_OPTIONS,
@@ -400,15 +401,15 @@ internal fun photographyCaptureSettings(
     val focusPicker =
         MonitorPickerPresentation(
             kind = MonitorPickerKind.FOCUS,
-            title = "FOCUS",
-            subtitle = "AF mode",
+            title = lstr(context, R.string.picker_focus_title),
+            subtitle = lstr(context, R.string.picker_af_mode),
             modes =
                 listOf(
                     MonitorPickerModePresentation(
-                        label = "Mode",
+                        label = lstr(context, R.string.picker_mode_label),
                         request =
                             CommandControlRequest(
-                                title = "FOCUS",
+                                title = lstr(context, R.string.picker_focus_title),
                                 control = CameraControl.STILL_FOCUS_MODE,
                                 currentValue =
                                     properties.activeFocusMode(photography = true)
@@ -418,10 +419,10 @@ internal fun photographyCaptureSettings(
                         applyValueOnActivate = false,
                     ),
                     MonitorPickerModePresentation(
-                        label = "Area",
+                        label = lstr(context, R.string.picker_area_label),
                         request =
                             CommandControlRequest(
-                                title = "FOCUS",
+                                title = lstr(context, R.string.picker_focus_title),
                                 control = CameraControl.STILL_FOCUS_AREA,
                                 currentValue =
                                     properties.focusArea?.takeIf { it in focusAreaOptions }.orEmpty(),
@@ -430,10 +431,10 @@ internal fun photographyCaptureSettings(
                         applyValueOnActivate = false,
                     ),
                     MonitorPickerModePresentation(
-                        label = "Subject",
+                        label = lstr(context, R.string.picker_subject_label),
                         request =
                             CommandControlRequest(
-                                title = "FOCUS",
+                                title = lstr(context, R.string.picker_focus_title),
                                 control = CameraControl.STILL_FOCUS_SUBJECT,
                                 currentValue =
                                     properties.focusSubject?.takeIf { it in focusSubjectOptions }.orEmpty(),
@@ -447,8 +448,8 @@ internal fun photographyCaptureSettings(
     val meterPicker =
         flat(
             kind = MonitorPickerKind.METER,
-            title = "METER",
-            subtitle = "Metering pattern",
+            title = lstr(context, R.string.picker_meter_title),
+            subtitle = lstr(context, R.string.picker_metering_pattern),
             control = CameraControl.STILL_METER,
             options = advertised(CameraControl.STILL_METER, StillPickerLadders.METER_OPTIONS),
             current = properties.meteringMode,
@@ -457,8 +458,8 @@ internal fun photographyCaptureSettings(
     val profilePicker =
         flat(
             kind = MonitorPickerKind.PROFILE,
-            title = "PROFILE",
-            subtitle = "Picture control",
+            title = lstr(context, R.string.picker_profile_title),
+            subtitle = lstr(context, R.string.picker_picture_control),
             control = CameraControl.STILL_PICTURE_CONTROL,
             options =
                 advertised(
@@ -545,6 +546,7 @@ internal fun photographyCaptureSettings(
  */
 internal fun photographyTopBarPickers(
     properties: CameraPropertySnapshot,
+    context: Context? = null,
 ): Map<MonitorPickerKind, MonitorPickerPresentation> {
     val cameraSizes =
         properties.controlCapabilities.options(CameraControl.STILL_IMAGE_SIZE)
@@ -552,15 +554,15 @@ internal fun photographyTopBarPickers(
     val sizePicker =
         MonitorPickerPresentation(
             kind = MonitorPickerKind.SIZE,
-            title = "SIZE",
-            subtitle = "Area · size",
+            title = lstr(context, R.string.picker_size_title),
+            subtitle = lstr(context, R.string.picker_area_size),
             modes =
                 listOf(
                     MonitorPickerModePresentation(
-                        label = "Area",
+                        label = lstr(context, R.string.picker_area_label),
                         request =
                             CommandControlRequest(
-                                title = "SIZE",
+                                title = lstr(context, R.string.picker_size_title),
                                 control = CameraControl.STILL_IMAGE_AREA,
                                 currentValue =
                                     properties.imageArea
@@ -570,10 +572,10 @@ internal fun photographyTopBarPickers(
                         applyValueOnActivate = false,
                     ),
                     MonitorPickerModePresentation(
-                        label = "Size",
+                        label = lstr(context, R.string.picker_size_label),
                         request =
                             CommandControlRequest(
-                                title = "SIZE",
+                                title = lstr(context, R.string.picker_size_title),
                                 control = CameraControl.STILL_IMAGE_SIZE,
                                 currentValue =
                                     (cameraSizes ?: StillPickerLadders.SIZE_OPTIONS).let { all ->
@@ -588,15 +590,15 @@ internal fun photographyTopBarPickers(
     val qualityPicker =
         MonitorPickerPresentation(
             kind = MonitorPickerKind.QUALITY,
-            title = "QUALITY",
-            subtitle = "RAW · JPEG/HEIF",
+            title = lstr(context, R.string.picker_quality_title),
+            subtitle = lstr(context, R.string.picker_raw_jpeg_heif),
             modes =
                 listOf(
                     MonitorPickerModePresentation(
-                        label = "QUALITY",
+                        label = lstr(context, R.string.picker_quality_title),
                         request =
                             CommandControlRequest(
-                                title = "QUALITY",
+                                title = lstr(context, R.string.picker_quality_title),
                                 control = CameraControl.STILL_QUALITY,
                                 currentValue = properties.compression.orEmpty(),
                                 options = StillPickerLadders.QUALITY_OPTIONS,
@@ -839,7 +841,7 @@ internal fun QualityPickerPanelBody(
                 val starEnabled = controlsEnabled && config.tier != StillQualityConfig.TIER_OFF
                 Box(Modifier.fillMaxWidth().alpha(if (starEnabled) 1f else 0.35f)) {
                     QualityOptionChip(
-                        label = "★ Optimal quality",
+                        label = stringResource(R.string.picker_optimal_quality),
                         active = config.starred,
                         enabled = starEnabled,
                     ) {

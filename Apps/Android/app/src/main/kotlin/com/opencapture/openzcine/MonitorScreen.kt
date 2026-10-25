@@ -689,7 +689,7 @@ internal fun MonitorScreen(
         }
     val photographyTopPickers =
         remember(cameraProperties, isPhotographyMode) {
-            if (isPhotographyMode) photographyTopBarPickers(cameraProperties) else emptyMap()
+            if (isPhotographyMode) photographyTopBarPickers(cameraProperties, context = appContext) else emptyMap()
         }
     val activeMonitorPicker =
         if (isPhotographyMode) {
