@@ -486,11 +486,11 @@ internal fun photographyCaptureSettings(
 
     // iOS `photographyCaptureValues`: same tiles, same order, same width pins.
     return listOf(
-        tile(MonitorPickerKind.MODE, "MODE", properties.exposureMode, "Auto", modePicker),
-        tile(MonitorPickerKind.ISO, "ISO", properties.iso?.toString(), "25600", isoPicker),
+        tile(MonitorPickerKind.MODE, lstr(context, R.string.camera_label_mode), properties.exposureMode, "Auto", modePicker),
+        tile(MonitorPickerKind.ISO, lstr(context, R.string.camera_label_iso), properties.iso?.toString(), "25600", isoPicker),
         tile(
             MonitorPickerKind.SHUTTER,
-            "SHUTTER",
+            lstr(context, R.string.camera_label_shutter),
             properties.shutterSpeed,
             "1/16000",
             shutterPicker,
@@ -499,7 +499,7 @@ internal fun photographyCaptureSettings(
         ),
         tile(
             MonitorPickerKind.IRIS,
-            "IRIS",
+            lstr(context, R.string.camera_label_iris),
             properties.iris,
             "f/2.8",
             irisPicker,
@@ -507,14 +507,14 @@ internal fun photographyCaptureSettings(
         ),
         tile(
             MonitorPickerKind.DRIVE,
-            "DRIVE",
+            lstr(context, R.string.camera_label_drive),
             compactDriveLabel(properties.stillCaptureMode),
             "Single",
             drivePicker,
         ),
         tile(
             MonitorPickerKind.FOCUS,
-            "FOCUS",
+            lstr(context, R.string.camera_label_focus),
             // Stills AF mode only — leftover movie AF-F on this tile is #272.
             properties.activeFocusMode(photography = true),
             "Wide-L",
@@ -522,17 +522,17 @@ internal fun photographyCaptureSettings(
         ),
         tile(
             MonitorPickerKind.WHITE_BALANCE,
-            "WB",
+            lstr(context, R.string.camera_label_wb),
             stillWhiteBalanceValue(properties),
             "5560K",
             wbPicker?.let { picker ->
                 picker.copy(popup = nikonCapturePopup(picker, context).copy(photography = true))
             },
         ),
-        tile(MonitorPickerKind.METER, "METER", properties.meteringMode, "Matrix", meterPicker),
+        tile(MonitorPickerKind.METER, lstr(context, R.string.camera_label_meter), properties.meteringMode, "Matrix", meterPicker),
         tile(
             MonitorPickerKind.PROFILE,
-            "PROFILE",
+            lstr(context, R.string.camera_label_profile),
             compactPictureControlLabel(properties.pictureControl),
             "Auto",
             profilePicker,

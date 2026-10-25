@@ -255,11 +255,15 @@
     <string name="camera_mode_af">自动对焦模式</string>
     <string name="camera_mode_area">区域</string>
     <string name="camera_mode_subject">主体</string>
+    <string name="camera_label_mode">模式</string>
     <string name="camera_label_iso">ISO</string>
     <string name="camera_label_shutter">快门</string>
     <string name="camera_label_iris">光圈</string>
+    <string name="camera_label_drive">驱动</string>
     <string name="camera_label_focus">对焦</string>
     <string name="camera_label_wb">白平衡</string>
+    <string name="camera_label_meter">测光</string>
+    <string name="camera_label_profile">配置</string>
     <string name="camera_subtitle_iso">感光度 · 双基准</string>
     <string name="camera_subtitle_shutter">角度 / 速度</string>
     <string name="camera_subtitle_iris">光圈</string>
