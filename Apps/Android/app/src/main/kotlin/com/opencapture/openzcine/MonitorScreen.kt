@@ -1960,7 +1960,6 @@ internal fun MonitorScreen(
             stringResource(R.string.split_comparison_key), splitComparisonMuted) { splitComparisonMuted = !splitComparisonMuted } else null
         val identity = MonitorOperatorLiveIdentity(sharedControlState.snapshot?.session,
             sharedControlState.snapshot?.epoch, pictureFrameSource)
-        val currentPicture = rememberUpdatedState(pictureFrameSource)
         val statusStorage = if (isPhotographyMode && mounted(MonitorDisplaySection.TIMECODE)) {
             val storage = cameraProperties.storage
             val capacity = storage?.readout?.takeIf { photoPillShowsStorage && it.totalBytes != null }
@@ -2068,8 +2067,13 @@ internal fun MonitorScreen(
             }
         }
         val source = MonitorOperatorLiveSource(
-            identity = { MonitorOperatorLiveIdentity(commonControl.state.value.snapshot?.session,
-                commonControl.state.value.snapshot?.epoch, currentPicture.value) },
+            identity = {
+                MonitorOperatorLiveIdentity(
+                    sharedControlState.snapshot?.session,
+                    sharedControlState.snapshot?.epoch,
+                    pictureFrameSource,
+                )
+            },
             available = available,
             picture = MonitorOperatorLivePicture(portraitFeedAspectRatio,
                 // A connected camera that has not delivered a picture yet looks exactly like a wedged one;
@@ -2419,9 +2423,9 @@ internal fun MonitorScreen(
                             request = commandPresentation.stabilization,
                             controlsEnabled = commandControlsEnabled,
                             currentSource = {
-                                stabilizationSource == commonControl.state.value.snapshot?.let { it.session to it.epoch } &&
-                                    identity == MonitorOperatorLiveIdentity(commonControl.state.value.snapshot?.session,
-                                        commonControl.state.value.snapshot?.epoch, currentPicture.value)
+                            stabilizationSource == sharedControlState.snapshot?.let { it.session to it.epoch } &&
+                                identity == MonitorOperatorLiveIdentity(sharedControlState.snapshot?.session,
+                                    sharedControlState.snapshot?.epoch, pictureFrameSource)
                             },
                             feedback = commandControlFeedback,
                             onSelect = { request, label ->
@@ -2442,13 +2446,15 @@ internal fun MonitorScreen(
             )
         }
 
-        gyroState?.takeIf { state ->
-            isMonitorFront && activeMonitorPickerKind == null && activeCommandControl == null && !activeCommandStabilization &&
+        if (gyroState != null) {
+            val state: GyroCaptureState = gyroState
+            if (isMonitorFront && activeMonitorPickerKind == null && activeCommandControl == null && !activeCommandStabilization &&
                 (state.enabled || state.failed) && (!isClean || state.failed)
-        }?.let { state ->
-            // The shared badge slot keeps the pill and its touch target off the lock (ZT-06).
-            Box(Modifier.align(Alignment.TopStart).zone(fieldLayout.appBadge), contentAlignment = Alignment.CenterStart) {
-                GyroStatusPill(state, onClick = onOpenGyroLogs)
+            ) {
+                // The shared badge slot keeps the pill and its touch target off the lock (ZT-06).
+                Box(Modifier.align(Alignment.TopStart).zone(fieldLayout.appBadge), contentAlignment = Alignment.CenterStart) {
+                    GyroStatusPill(state, onClick = onOpenGyroLogs)
+                }
             }
         }
 
