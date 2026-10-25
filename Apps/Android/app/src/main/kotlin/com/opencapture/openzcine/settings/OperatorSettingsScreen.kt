@@ -360,21 +360,27 @@ internal fun OperatorSettingsScreen(
  * The app language: the stored override with the languages this build ships, each written in its
  * own language so it reads the same whichever one is showing. Choosing one stores it and relaunches
  * the app, because the retained owners keep the context they were built with ([AppLanguage]).
+ *
+ * Built once per language, not once per recomposition: the settings page redraws on every link and
+ * status tick, and a fresh source each time is a fresh object the row below can never skip.
  */
 @Composable
 private fun languageSource(): MonitorSettingsLanguageSource {
     val context = LocalContext.current
     val followSystem = stringResource(R.string.settings_language_follow_system)
-    return MonitorSettingsLanguageSource(
-        selection = AppLanguage.stored(context).takeIf { it.isNotBlank() },
-        choices = listOf(
-            MonitorSettingsLanguageChoice(null, followSystem),
-            MonitorSettingsLanguageChoice(AppLanguage.ENGLISH, stringResource(R.string.settings_language_english)),
-            MonitorSettingsLanguageChoice(
-                AppLanguage.CHINESE_SIMPLIFIED, stringResource(R.string.settings_language_chinese)),
-        ),
-        select = { tag -> AppLanguage.save(context, tag); AppLanguage.restart(context) },
-    )
+    val english = stringResource(R.string.settings_language_english)
+    val chinese = stringResource(R.string.settings_language_chinese)
+    return remember(context, followSystem, english, chinese) {
+        MonitorSettingsLanguageSource(
+            selection = AppLanguage.stored(context).takeIf { it.isNotBlank() },
+            choices = listOf(
+                MonitorSettingsLanguageChoice(null, followSystem),
+                MonitorSettingsLanguageChoice(AppLanguage.ENGLISH, english),
+                MonitorSettingsLanguageChoice(AppLanguage.CHINESE_SIMPLIFIED, chinese),
+            ),
+            select = { tag -> AppLanguage.save(context, tag); AppLanguage.restart(context) },
+        )
+    }
 }
 
 /** Actual broadcast service observations and admitted native actions. */

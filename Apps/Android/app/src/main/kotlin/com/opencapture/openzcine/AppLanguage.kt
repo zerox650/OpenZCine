@@ -6,8 +6,8 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
-import android.os.Process
 import java.util.Locale
+import kotlin.system.exitProcess
 
 /**
  * The operator's app language, an override of the language this phone is set to.
@@ -37,8 +37,11 @@ object AppLanguage {
             .getString(KEY_TAG, FOLLOW_SYSTEM) ?: FOLLOW_SYSTEM
 
     fun save(context: Context, tag: String?) {
+        // commit(), not apply(): the caller relaunches the app on the next line and ends this
+        // process, and an asynchronous write dies with it. The operator would come back to the
+        // language they just left.
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .edit().putString(KEY_TAG, tag ?: FOLLOW_SYSTEM).apply()
+            .edit().putString(KEY_TAG, tag ?: FOLLOW_SYSTEM).commit()
     }
 
     /** A context whose resources read [tag], or the untouched context when it follows the system. */
@@ -66,12 +69,16 @@ object AppLanguage {
      * ([com.opencapture.openzcine.AppRoot]) survive a recreation and were built against the old
      * application context, so their copy would keep the old language. A fresh process rebuilds
      * every context, including the application's, from the stored tag.
+     *
+     * [Intent.makeRestartActivityTask] replaces the task rather than laying a second launch on top
+     * of it, so the operator gets one cold start on the new language instead of the old activity
+     * and its owners coming back beside the new process.
      */
     fun restart(context: Context) {
-        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
-        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        context.startActivity(launch)
-        Process.killProcess(Process.myPid())
+        val component = context.packageManager.getLaunchIntentForPackage(context.packageName)?.component
+            ?: return
+        context.startActivity(Intent.makeRestartActivityTask(component))
+        exitProcess(0)
     }
 }
 
