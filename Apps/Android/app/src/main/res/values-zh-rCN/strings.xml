@@ -254,6 +254,15 @@
     <string name="camera_label_wb">白平衡</string>
     <string name="camera_label_meter">测光</string>
     <string name="camera_label_profile">配置</string>
+    <string name="camera_meter_matrix">矩阵测光</string>
+    <string name="camera_meter_center">中央重点</string>
+    <string name="camera_meter_spot">点测光</string>
+    <string name="camera_meter_highlight">亮部重点</string>
+    <string name="camera_drive_single">单张</string>
+    <string name="camera_drive_continuous_low">低速连拍</string>
+    <string name="camera_drive_continuous_high">高速连拍</string>
+    <string name="camera_drive_continuous_high_plus">高速连拍+</string>
+    <string name="camera_drive_self_timer">自拍</string>
     <string name="camera_subtitle_iso">感光度 · 双基准</string>
     <string name="camera_subtitle_shutter">角度 / 速度</string>
     <string name="camera_subtitle_iris">光圈</string>

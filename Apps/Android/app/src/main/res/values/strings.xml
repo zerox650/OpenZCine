@@ -254,6 +254,17 @@
     <string name="camera_label_wb">WB</string>
     <string name="camera_label_meter">METER</string>
     <string name="camera_label_profile">PROFILE</string>
+    <!-- Capture-strip values the camera reports as English words: metering and drive only.
+         Mode (A/S/M), focus (AF-S), shutter and aperture stay as the camera writes them. -->
+    <string name="camera_meter_matrix">Matrix</string>
+    <string name="camera_meter_center">Center</string>
+    <string name="camera_meter_spot">Spot</string>
+    <string name="camera_meter_highlight">Highlight</string>
+    <string name="camera_drive_single">Single</string>
+    <string name="camera_drive_continuous_low">CL</string>
+    <string name="camera_drive_continuous_high">CH</string>
+    <string name="camera_drive_continuous_high_plus">CH+</string>
+    <string name="camera_drive_self_timer">Timer</string>
     <string name="camera_subtitle_iso">Sensitivity · dual base</string>
     <string name="camera_subtitle_shutter">Angle / speed</string>
     <string name="camera_subtitle_iris">Aperture</string>

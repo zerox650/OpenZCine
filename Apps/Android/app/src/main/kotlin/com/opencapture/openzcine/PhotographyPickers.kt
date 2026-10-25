@@ -477,7 +477,7 @@ internal fun photographyCaptureSettings(
     ) = MonitorCaptureSettingPresentation(
         kind = kind,
         label = label,
-        value = captureBarDisplayValue(value ?: "—"),
+        value = captureBarDisplayValue(value ?: "—", kind, context),
         widestValue = widestValue,
         picker = picker,
         unavailableReason = null,

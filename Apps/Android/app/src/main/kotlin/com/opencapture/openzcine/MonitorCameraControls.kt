@@ -276,7 +276,7 @@ internal fun monitorCaptureSettings(
         return MonitorCaptureSettingPresentation(
             kind = kind,
             label = label,
-            value = captureBarDisplayValue(tile?.value ?: "—"),
+            value = captureBarDisplayValue(tile?.value ?: "—", kind, context),
             widestValue = widestValue,
             picker =
                 modes.takeIf(List<MonitorPickerModePresentation>::isNotEmpty)?.let {
@@ -301,7 +301,7 @@ internal fun monitorCaptureSettings(
         MonitorCaptureSettingPresentation(
             kind = kind,
             label = label,
-            value = captureBarDisplayValue(valueTile?.value ?: "—"),
+            value = captureBarDisplayValue(valueTile?.value ?: "—", kind, context),
             widestValue = widestValue,
             picker =
                 modes.takeIf(List<MonitorPickerModePresentation>::isNotEmpty)?.let {
@@ -365,7 +365,7 @@ internal fun monitorCaptureSettings(
         MonitorCaptureSettingPresentation(
             kind = MonitorPickerKind.ISO,
             label = strings.resolve(R.string.camera_label_iso),
-            value = captureBarDisplayValue(isoTile?.value ?: "—"),
+            value = captureBarDisplayValue(isoTile?.value ?: "—", MonitorPickerKind.ISO, context),
             widestValue = "25600",
             picker = isoPresentation,
             unavailableReason = isoTile?.unavailableReason,
@@ -375,7 +375,7 @@ internal fun monitorCaptureSettings(
         MonitorCaptureSettingPresentation(
             kind = MonitorPickerKind.SHUTTER,
             label = strings.resolve(R.string.camera_label_shutter),
-            value = captureBarDisplayValue(shutterTile?.value ?: "—"),
+            value = captureBarDisplayValue(shutterTile?.value ?: "—", MonitorPickerKind.SHUTTER, context),
             widestValue = "1/16000",
             picker = shutterPresentation,
             unavailableReason = shutterTile?.unavailableReason,
@@ -398,7 +398,7 @@ internal fun monitorCaptureSettings(
             MonitorCaptureSettingPresentation(
                 kind = MonitorPickerKind.IRIS,
                 label = strings.resolve(R.string.camera_label_iris),
-                value = captureBarDisplayValue(irisTile?.value ?: "—"),
+                value = captureBarDisplayValue(irisTile?.value ?: "—", MonitorPickerKind.IRIS, context),
                 widestValue = "f/2.8",
                 picker = presentation,
                 unavailableReason = if (presentation == null) irisTile?.unavailableReason else null,
@@ -411,7 +411,7 @@ internal fun monitorCaptureSettings(
             MonitorCaptureSettingPresentation(
                 kind = MonitorPickerKind.WHITE_BALANCE,
                 label = strings.resolve(R.string.camera_label_wb),
-                value = captureBarDisplayValue(wbTile?.value ?: "—"),
+                value = captureBarDisplayValue(wbTile?.value ?: "—", MonitorPickerKind.WHITE_BALANCE, context),
                 widestValue = "10000K",
                 picker = wbPresentation,
                 unavailableReason = wbTile?.unavailableReason,
@@ -420,7 +420,7 @@ internal fun monitorCaptureSettings(
         MonitorCaptureSettingPresentation(
             kind = MonitorPickerKind.FOCUS,
             label = strings.resolve(R.string.camera_label_focus),
-            value = captureBarDisplayValue(focusValue),
+            value = captureBarDisplayValue(focusValue, MonitorPickerKind.FOCUS, context),
             widestValue = "Wide-L",
             picker = focusPresentation,
             unavailableReason = focus.getOrNull(0)?.unavailableReason,
@@ -550,6 +550,7 @@ private val relayValueKinds =
 internal fun relayCaptureSettings(
     settings: List<MonitorCaptureSettingPresentation>,
     relayedValues: List<MonitorRelayWire.StateValue>,
+    context: Context? = null,
 ): List<MonitorCaptureSettingPresentation> {
     val byKind =
         relayedValues
@@ -558,7 +559,7 @@ internal fun relayCaptureSettings(
     return settings.map { setting ->
         byKind[setting.kind]
             ?.takeIf { it.isNotBlank() }
-            ?.let { setting.copy(value = captureBarDisplayValue(it)) }
+            ?.let { setting.copy(value = captureBarDisplayValue(it, setting.kind, context)) }
             ?: setting
     }
 }
@@ -566,12 +567,42 @@ internal fun relayCaptureSettings(
 /**
  * Bar-side abbreviations (iOS `CaptureSettingButton.displayValue`). Full forms
  * stay in the drum; only the strip shortens.
+ *
+ * Metering and drive are the two values the camera reports as English words an operator reads, so
+ * the strip names them in the operator's language. The mode (A/S/M), the focus mode (AF-S), the
+ * shutter and the aperture stay exactly as the camera writes them: they are the abbreviations the
+ * body's own screen uses, and they are what the drum offers, so a translated strip would no longer
+ * match what the operator taps.
  */
-internal fun captureBarDisplayValue(value: String): String =
-    when (value) {
+internal fun captureBarDisplayValue(
+    value: String,
+    kind: MonitorPickerKind? = null,
+    context: Context? = null,
+): String {
+    val localized = when (kind) {
+        MonitorPickerKind.METER -> when (value) {
+            "Matrix" -> R.string.camera_meter_matrix
+            "Center" -> R.string.camera_meter_center
+            "Spot" -> R.string.camera_meter_spot
+            "Highlight" -> R.string.camera_meter_highlight
+            else -> null
+        }
+        MonitorPickerKind.DRIVE -> when (value) {
+            "Single" -> R.string.camera_drive_single
+            "CL", "Continuous L" -> R.string.camera_drive_continuous_low
+            "CH", "Continuous H" -> R.string.camera_drive_continuous_high
+            "CH+", "Continuous H+" -> R.string.camera_drive_continuous_high_plus
+            "Self-timer", "Timer" -> R.string.camera_drive_self_timer
+            else -> null
+        }
+        else -> null
+    }
+    if (localized != null) return lstr(context, localized)
+    return when (value) {
         "Auto Subject" -> "Auto-S"
         else -> value
     }
+}
 
 /** Returns the next picker state for a capture-cell tap. */
 internal fun nextMonitorPicker(
