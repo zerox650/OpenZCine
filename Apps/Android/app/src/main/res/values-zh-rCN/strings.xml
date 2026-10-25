@@ -172,22 +172,12 @@
     <!-- Saved cameras: the add-setup card and the cameras page rows. -->
     <string name="saved_your_cameras">你的相机</string>
     <string name="saved_wifi_subtitle">Wi-Fi · %1$s · %2$s</string>
-    <string name="saved_add_setup_title">添加配置 · %1$s</string>
-    <string name="saved_add_setup_body">一台相机，多种连接方式。选择本套设备的运行方式；首次以该方式连接时，配置会自动保存。</string>
-    <string name="saved_setup_ap_title">相机接入点</string>
-    <string name="saved_setup_ap_body">本设备加入相机自身的 Wi-Fi——最适合在野外且无其他设备时使用。首次只需输入相机的网络密钥。</string>
     <string name="saved_setup_ap_action_join">加入相机 Wi-Fi</string>
     <string name="saved_setup_ap_action_scan">扫描相机 Wi-Fi</string>
     <string name="saved_setup_connect_now">立即连接</string>
     <string name="saved_setup_connect_when_plugged">插入时连接</string>
     <string name="saved_setup_find_on_network">在此网络上查找</string>
     <string name="saved_setup_wait_for_camera">等待相机</string>
-    <string name="saved_setup_router_title">Wi-Fi 网络</string>
-    <string name="saved_setup_router_body">将相机与本设备置于同一网络（拍摄现场路由器、家用 Wi-Fi）。在相机上开启“连接到电脑”并创建该网络的配置文件；它会出现在相机列表中，并在连接时保存。</string>
-    <string name="saved_setup_hotspot_title">本设备的热点</string>
-    <string name="saved_setup_hotspot_body">开启本设备的热点，并将相机网络配置文件指向它。相机会主动加入你——一旦加入，它就会出现在列表中。</string>
-    <string name="saved_setup_usb_title">USB-C 线缆</string>
-    <string name="saved_setup_usb_body">将相机直接插入本设备。它将连接并自动保存——无需任何配置。</string>
     <string name="saved_network_filters_discovery">此网络屏蔽了设备发现（组播/mDNS 被过滤），因此这里的设备可能不稳定或缺失。OpenZCine 改为直接访问它们。如需可靠发现，请在路由器上关闭组播过滤与组播最小速率限制。</string>
     <string name="relay_watch">观看</string>
     <string name="pairing_watcher_question">正在观看另一台设备？</string>
