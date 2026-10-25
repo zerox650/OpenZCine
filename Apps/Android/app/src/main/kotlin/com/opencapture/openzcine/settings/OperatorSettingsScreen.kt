@@ -269,7 +269,7 @@ internal fun OperatorSettingsScreen(
         health?.detail?.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_link_no_camera_caption)
     } else {
         val detail = health?.detail?.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_active_link)
-        health?.score?.let { "$detail · ${MonitorLinkHealth.band(it).label}" } ?: detail
+        health?.score?.let { "$detail · ${stringResource(MonitorLinkHealth.band(it).labelRes)}" } ?: detail
     }
     val transportValue = if (!linked) stringResource(R.string.settings_transport_not_connected)
         else stringResource(R.string.settings_transport_active, activeTransportLabel ?: "Wi-Fi")
