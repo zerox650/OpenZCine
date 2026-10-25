@@ -5,6 +5,7 @@ import com.opencapture.opencine.nikon.LiveFocusInfo
 import com.opencapture.opencine.appkit.MonitorReviewOptions
 import com.opencapture.monitorui.MonitorRect
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
@@ -260,12 +261,13 @@ internal fun InstantReviewOverlay(
     }
     val desqueezeAspectRatio =
         desqueeze?.desqueezedAspectRatio(review.image.width, review.image.height)
+    val instantPlayback = stringResource(R.string.instant_playback)
     Box(
         modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.94f))
             .chromeClickable(onClick = onDismiss)
-            .semantics { contentDescription = "Instant playback" },
+            .semantics { contentDescription = instantPlayback },
         contentAlignment = Alignment.Center,
     ) {
         Image(

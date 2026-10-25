@@ -1234,4 +1234,8 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="picker_quality_title">QUALITY</string>
     <string name="picker_raw_jpeg_heif">RAW · JPEG/HEIF</string>
     <string name="picker_optimal_quality">★ Optimal quality</string>
+    <string name="picker_sensitivity">Sensitivity</string>
+    <string name="picker_speed">Speed</string>
+    <string name="picker_aperture">Aperture</string>
+    <string name="instant_playback">Instant playback</string>
 </resources>

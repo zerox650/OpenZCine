@@ -256,6 +256,10 @@ internal val APP_ENGLISH_STRINGS: Map<Int, String> = mapOf(
     R.string.picker_quality_title to "QUALITY",
     R.string.picker_raw_jpeg_heif to "RAW · JPEG/HEIF",
     R.string.picker_optimal_quality to "★ Optimal quality",
+    R.string.picker_sensitivity to "Sensitivity",
+    R.string.picker_speed to "Speed",
+    R.string.picker_aperture to "Aperture",
+    R.string.instant_playback to "Instant playback",
 )
 
 /**

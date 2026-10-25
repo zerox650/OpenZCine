@@ -279,7 +279,7 @@ internal fun photographyCaptureSettings(
         MonitorPickerPresentation(
             kind = MonitorPickerKind.ISO,
             title = lstr(context, R.string.picker_iso_title),
-            subtitle = "Sensitivity",
+            subtitle = lstr(context, R.string.picker_sensitivity),
             modes = listOf(isoMode(auto = true), isoMode(auto = false)),
             // Camera truth: the body's Auto-ISO readback picks the open tab.
             initialModeIndex = if (properties.isoAuto == true) 0 else 1,
@@ -300,8 +300,8 @@ internal fun photographyCaptureSettings(
     val shutterPicker =
         flat(
             kind = MonitorPickerKind.SHUTTER,
-            title = "SHUTTER",
-            subtitle = "Speed",
+            title = lstr(context, R.string.camera_label_shutter),
+            subtitle = lstr(context, R.string.picker_speed),
             control = CameraControl.STILL_SHUTTER,
             options = cameraShutter ?: StillPickerLadders.SHUTTER_OPTIONS,
             current = properties.shutterSpeed,
@@ -316,8 +316,8 @@ internal fun photographyCaptureSettings(
     val irisPicker =
         flat(
             kind = MonitorPickerKind.IRIS,
-            title = "IRIS",
-            subtitle = "Aperture",
+            title = lstr(context, R.string.camera_label_iris),
+            subtitle = lstr(context, R.string.picker_aperture),
             control = CameraControl.STILL_IRIS,
             options = cameraApertures ?: StillPickerLadders.IRIS_OPTIONS,
             current = properties.iris,
