@@ -4,7 +4,7 @@
   <img src="docs/assets/icon.png" alt="OpenZCine 应用图标" width="96" height="96">
 </a>
 
-# OpenZCine 简体中文汉化版
+# OpenZCine 汉化版
 
 **面向 Nikon Z 的开源现场监看器。**<br>
 专业级监看示波器、片段回放、完整相机控制，以及带 LUT 烘焙的 Camera-to-Cloud 导出。免费且开源。
@@ -22,7 +22,7 @@
 </div>
 
 > [!IMPORTANT]
-> **这是简体中文汉化版，由个人维护的 fork，不是官方版本。**
+> **这是 OpenZCine 汉化版，由个人维护的 fork，不是官方版本。**
 >
 > - 基于上游 [erik-sutton95/OpenZCine](https://github.com/erik-sutton95/OpenZCine) 的 **0.2.5** 版本，仅对 **Android** 端做了简体中文本地化，iOS 端未做改动。
 > - 改动范围仅限界面文案与字符串资源（`strings.xml`、`values-zh-rCN`），未改动相机协议、图像处理、录制与导出逻辑。
@@ -108,7 +108,7 @@ iPhone、iPad 与 Android 手机共享同一套监看、辅助工具、相机控
 
 | 平台 | 方式 | 说明 |
 | --- | --- | --- |
-| **Android（简体中文汉化版）** | [下载本仓库的 APK](https://github.com/zerox650/OpenZCine/releases/latest) | 仅本仓库提供。已汉化，debug 签名，需 Android 10 或更高版本、arm64。 |
+| **Android（汉化版）** | [下载本仓库的 APK](https://github.com/zerox650/OpenZCine/releases/latest) | 仅本仓库提供。已汉化，debug 签名，需 Android 10 或更高版本、arm64。 |
 | **iPhone 与 iPad（官方英文版）** | [加入 TestFlight](https://testflight.apple.com/join/xu4d6UK8) | 一个通用应用，附带 Apple Watch 伴侣。本汉化版未改动 iOS。 |
 | **Android（官方版）** | [Google Play 公开测试](https://play.google.com/store/apps/details?id=com.opencapture.openzcine) | 官方构建，界面为英文。 |
 | **Android 无 Play 商店（官方版）** | [侧载 APK](https://github.com/erik-sutton95/OpenZCine/releases/tag/sideload-v0.2.5-4)（**0.2.5 (4)**） | 上游提供的英文版，适合现场监视器等无 Play 商店的设备。 |
