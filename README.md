@@ -187,7 +187,7 @@ open ios/Runner.xcodeproj
 
 ```bash
 cd Apps/Android
-ANDROID_KEYSTORE_PATH="C:/Users/<你>/.android/debug.keystore" \
+ANDROID_KEYSTORE_PATH="$HOME/.android/debug.keystore" \
 ANDROID_KEYSTORE_PASSWORD=android \
 ANDROID_KEY_ALIAS=androiddebugkey \
 ANDROID_KEY_PASSWORD=android \
