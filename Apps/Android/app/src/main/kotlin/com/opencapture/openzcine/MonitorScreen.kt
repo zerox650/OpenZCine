@@ -593,9 +593,12 @@ internal fun MonitorScreen(
                     cameraPropertyConfirmsSelection(session.cameraProperties.value, control, label)
             },
             refused = { selection, error ->
+                // The typed control failures own operator copy; a lens or session error keeps its
+                // own words, which are already written for the operator.
+                val detail = (error as? CameraControlException)?.let { controlFailureMessage(it, appContext) }
+                    ?: error.message ?: appContext.getString(R.string.control_change_rejected)
                 commandControlFeedback = CommandControlFeedback(
-                    appContext.getString(R.string.control_error, selection.request.title,
-                        error.message ?: appContext.getString(R.string.control_change_rejected)),
+                    appContext.getString(R.string.control_error, selection.request.title, detail),
                     isError = true,
                 )
             },
@@ -1944,9 +1947,11 @@ internal fun MonitorScreen(
             appContext.getSharedPreferences("assist", android.content.Context.MODE_PRIVATE), "assistToolUsage.v1") }
         var usage by remember(usageStore) { mutableStateOf(usageStore.value) }
         val instantPlaybackTitle = stringResource(R.string.monitor_instant_playback)
+        // The toolless chip's own word; a real tool's chip label is resolved from its resource below.
+        val instantPlaybackChip = stringResource(R.string.monitor_chip_play)
         val palette = liveAssistChips.map { chip ->
             val tool = (chip as? NikonAssistChip.Tool)?.tool
-            MonitorOperatorPaletteItem(chip.id, tool?.title ?: instantPlaybackTitle, tool?.chipLabel ?: "PLAY", tool,
+            MonitorOperatorPaletteItem(chip.id, tool?.title ?: instantPlaybackTitle, tool?.chipLabel ?: instantPlaybackChip, tool,
                 if (tool != null) assists.shared.isOn(tool) else assists.instantReview,
                 toggle = { haptics.selection(); if (tool != null) assists.shared.toggle(tool)
                     else assists.instantReview = !assists.instantReview }, hasOptions = tool?.nikonHasOptions == true,

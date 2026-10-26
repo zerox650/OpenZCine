@@ -762,13 +762,16 @@ internal fun QualityPickerPanelBody(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 QualityColumnCaption("RAW")
+                // The drum draws the operator's word; the RAW flag and the write label stay boolean.
+                val onLabel = stringResource(R.string.camera_value_on)
+                val offLabel = stringResource(R.string.camera_value_off)
                 CaptureDrumWheel(
-                    options = listOf("On", "Off"),
-                    selection = if (config.rawEnabled) "On" else "Off",
+                    options = listOf(onLabel, offLabel),
+                    selection = if (config.rawEnabled) onLabel else offLabel,
                     interactive = controlsEnabled,
                     onSelect = { settled ->
                         if (!controlsEnabled) return@CaptureDrumWheel
-                        val enabled = settled == "On"
+                        val enabled = settled == onLabel
                         if (enabled == config.rawEnabled) return@CaptureDrumWheel
                         config =
                             if (!enabled && config.tier == StillQualityConfig.TIER_OFF) {
@@ -789,7 +792,8 @@ internal fun QualityPickerPanelBody(
                 ) {
                     nefOptions.forEach { option ->
                         QualityOptionChip(
-                            label = option,
+                            // The chip draws the operator's word; the request below keeps the body's token.
+                            label = nefLabel(option),
                             active = nefCompression == option,
                             enabled = controlsEnabled && config.rawEnabled,
                         ) {
@@ -813,12 +817,18 @@ internal fun QualityPickerPanelBody(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 QualityColumnCaption("JPEG · HEIF")
+                // Draw the tier in the operator's language, then map the settled word back to the
+                // body's token before it reaches `config` and the compression label.
+                val tierLabels = StillQualityConfig.TIER_OPTIONS.associateWith { tierLabel(it) }
+                val tierDisplay = StillQualityConfig.TIER_OPTIONS.map { tierLabels.getValue(it) }
+                val tierRawByDrawn = tierDisplay.zip(StillQualityConfig.TIER_OPTIONS).toMap()
                 CaptureDrumWheel(
-                    options = StillQualityConfig.TIER_OPTIONS,
-                    selection = config.tier,
+                    options = tierDisplay,
+                    selection = tierLabels[config.tier] ?: config.tier,
                     interactive = controlsEnabled,
-                    onSelect = { settled ->
+                    onSelect = { drawn ->
                         if (!controlsEnabled) return@CaptureDrumWheel
+                        val settled = tierRawByDrawn[drawn] ?: return@CaptureDrumWheel
                         if (settled == config.tier) return@CaptureDrumWheel
                         config =
                             if (settled == StillQualityConfig.TIER_OFF) {
@@ -895,3 +905,31 @@ private fun QualityOptionChip(
         )
     }
 }
+
+/**
+ * The JPEG tier as the operator reads it. `config.tier` keeps the body's token (`Off`/`Basic`/
+ * `Normal`/`Fine`), which is what the write label and the persisted snapshot carry; only these
+ * drawn words are translated.
+ */
+@Composable
+private fun tierLabel(tier: String): String =
+    when (tier) {
+        StillQualityConfig.TIER_OFF -> stringResource(R.string.camera_value_off)
+        "Basic" -> stringResource(R.string.picker_tier_basic)
+        "Normal" -> stringResource(R.string.picker_tier_normal)
+        "Fine" -> stringResource(R.string.picker_tier_fine)
+        else -> tier
+    }
+
+/**
+ * The NEF compression chip word. The body's advertised token is the identity the request and the
+ * `nefCompression` comparison use; a token this build does not know falls through unchanged.
+ */
+@Composable
+private fun nefLabel(option: String): String =
+    when (option) {
+        "Lossless compression" -> stringResource(R.string.picker_quality_lossless)
+        "High efficiency★" -> stringResource(R.string.picker_quality_high_efficiency_star)
+        "High efficiency" -> stringResource(R.string.picker_quality_high_efficiency)
+        else -> option
+    }

@@ -483,7 +483,7 @@ internal fun focusPickerPresentation(
     val modes =
         listOfNotNull(
             drum(
-                tabLabel = "AF Mode",
+                tabLabel = strings.resolve(R.string.picker_af_mode),
                 tile = afModeTile,
                 control = CameraControl.FOCUS_MODE,
                 options = afOpts,
@@ -491,7 +491,7 @@ internal fun focusPickerPresentation(
                 live = afLive,
             ),
             drum(
-                tabLabel = "Area",
+                tabLabel = strings.resolve(R.string.picker_area_label),
                 tile = areaTile,
                 control = CameraControl.FOCUS_AREA,
                 options = areaOpts,
@@ -499,7 +499,7 @@ internal fun focusPickerPresentation(
                 live = areaLive,
             ),
             drum(
-                tabLabel = "Subject",
+                tabLabel = strings.resolve(R.string.picker_subject_label),
                 tile = subjectTile,
                 control = CameraControl.FOCUS_SUBJECT,
                 options = subjectOpts,
@@ -522,7 +522,7 @@ internal fun focusPickerPresentation(
     return MonitorPickerPresentation(
         kind = MonitorPickerKind.FOCUS,
         title = strings.resolve(R.string.camera_label_focus),
-        subtitle = FocusPickerPolicy.SUBTITLE,
+        subtitle = strings.resolve(R.string.camera_subtitle_focus),
         modes = modes,
         initialModeIndex = initialMode.coerceIn(0, modes.lastIndex),
     )
@@ -669,8 +669,8 @@ internal fun wbPickerPresentation(
         }
     return MonitorPickerPresentation(
         kind = MonitorPickerKind.WHITE_BALANCE,
-        title = WbPickerPolicy.TITLE,
-        subtitle = WbPickerPolicy.SUBTITLE,
+        title = strings.resolve(R.string.camera_title_wb),
+        subtitle = strings.resolve(R.string.camera_title_wb_subtitle),
         modes =
             listOf(
                 MonitorPickerModePresentation(
@@ -706,7 +706,9 @@ internal fun wbPickerPresentation(
             ),
         initialModeIndex = initialMode,
         popup = NikonCapturePopupState(
-            kind = NikonCapturePopupKind.WHITE_BALANCE, title = WbPickerPolicy.TITLE, subtitle = WbPickerPolicy.SUBTITLE,
+            kind = NikonCapturePopupKind.WHITE_BALANCE,
+            title = strings.resolve(R.string.camera_title_wb),
+            subtitle = strings.resolve(R.string.camera_title_wb_subtitle),
             modes = emptyList(), codec = codec,
             whiteBalanceMode = if (initialMode == 0) "Color temp" else live,
             tintCells = WhiteBalanceTint.cells(tintCurrent) ?: (0 to 0),

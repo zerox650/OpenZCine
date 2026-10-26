@@ -226,6 +226,83 @@ class LadderPickerTest {
         assertEquals(CameraControl.WHITE_BALANCE to "5550K", requestForLadderWrite(picker, write)?.let { it.first.control to it.second })
     }
 
+    @Test
+    fun drumsDrawTheOperatorsWordsAndWriteTheBodysOwnLabelsBack() {
+        // The words an operator reads never reach the camera: the drum reports the body's label.
+        val drive = videoLadderPresentation(picker(
+            MonitorPickerKind.DRIVE,
+            mode("Drive", CameraControl.STILL_DRIVE, "Single",
+                listOf("Single", "Continuous L", "Continuous H+", "C15"), applyOnActivate = false),
+            mode("Built-in Timer", CameraControl.STILL_DRIVE, "On", listOf("Off", "On"),
+                applyOnActivate = false, showsTimerShots = true),
+            mode("App-timer", CameraControl.STILL_DRIVE, "Off", StillPickerLadders.APP_TIMER_OPTIONS,
+                applyOnActivate = false, showsTimerShots = true),
+        ))
+        // Release mode, the two timers, and the abbreviations a body spells its own way.
+        assertEquals(mapOf("Single" to "Single", "Continuous L" to "CL", "Continuous H+" to "CH+"),
+            drive.tabs[0].valueLabels.filterKeys { it in setOf("Single", "Continuous L", "Continuous H+") })
+        assertEquals(mapOf("Off" to "Off", "On" to "On"), drive.tabs[1].valueLabels)
+        assertEquals(mapOf("Off" to "Off", "1s" to "1 s", "10s" to "10 s"), drive.tabs[2].valueLabels
+            .filterKeys { it in setOf("Off", "1s", "10s") })
+        // The ladder keeps the body's own labels, so the write still round-trips.
+        assertEquals(listOf("Single", "Continuous L", "Continuous H+", "C15"), drive.tabs[0].ladder.values)
+        val (request, value) = assertNotNull(requestForLadderWrite(
+            picker(MonitorPickerKind.DRIVE,
+                mode("Drive", CameraControl.STILL_DRIVE, "Single",
+                    listOf("Single", "Continuous L"), applyOnActivate = false)),
+            LadderWrite(NikonLadderControl.Value(0), "Continuous L")))
+        assertEquals(CameraControl.STILL_DRIVE to "Continuous L", request.control to value)
+
+        val meter = videoLadderPresentation(picker(
+            MonitorPickerKind.METER,
+            mode("METER", CameraControl.STILL_METER, "Matrix", listOf("Matrix", "Center", "Spot"))))
+        // The map carries the whole metering vocabulary; a drum only offers what its body does.
+        assertEquals(mapOf("Matrix" to "Matrix", "Center" to "Center", "Spot" to "Spot"),
+            meter.tabs.single().valueLabels.filterKeys { it in setOf("Matrix", "Center", "Spot") })
+        // The body's abbreviations stay as the camera writes them.
+        val focus = videoLadderPresentation(picker(
+            MonitorPickerKind.FOCUS,
+            mode("AF Mode", CameraControl.FOCUS_MODE, "AF-S", listOf("AF-S", "AF-C", "MF")),
+            mode("Area", CameraControl.FOCUS_AREA, "Wide-L",
+                listOf("Pinpoint", "Single", "Wide-L", "3D tracking", "Auto")),
+            mode("Subject", CameraControl.FOCUS_SUBJECT, "Auto", listOf("Off", "Auto", "People"))))
+        assertTrue(focus.tabs[0].valueLabels.isEmpty())
+        assertEquals("Auto" to "Auto", focus.tabs[1].valueLabels.entries.single { it.key == "Auto" }.toPair())
+        assertEquals("Auto" to "Auto", focus.tabs[2].valueLabels.entries.single { it.key == "Auto" }.toPair())
+        // The area drum's "Single" is one AF point; the drive drum's is one frame.
+        assertEquals("Single" to "Single", focus.tabs[1].valueLabels.entries.single { it.key == "Single" }.toPair())
+
+        val profile = videoLadderPresentation(picker(
+            MonitorPickerKind.PROFILE,
+            mode("PROFILE", CameraControl.STILL_PICTURE_CONTROL, "Dream",
+                listOf("Auto", "Dream", "Custom 3", "Cloud 2"))))
+        // The whole picture-control vocabulary travels; a numbered slot keeps the body's number.
+        assertEquals(mapOf("Auto" to "Auto", "Dream" to "Dream", "Custom 3" to "Custom 3", "Cloud 2" to "Cloud 2"),
+            profile.tabs.single().valueLabels.filterKeys { it in setOf("Auto", "Dream", "Custom 3", "Cloud 2") })
+    }
+
+    @Test
+    fun theWhiteBalanceBarSpellsItsTabsAndItsPresetsInTheOperatorsLanguage() {
+        val picker = picker(
+            MonitorPickerKind.WHITE_BALANCE,
+            mode("Kelvin", CameraControl.WHITE_BALANCE, "5560K", listOf("5560K")),
+            mode("Preset", CameraControl.WHITE_BALANCE, "Sunny", listOf("Auto", "Sunny", "Cloudy")),
+            mode("Tint", CameraControl.WHITE_BALANCE_TINT, "Neutral", listOf("Neutral")),
+        )
+        val sheet = videoLadderPresentation(picker)
+        // The bar's titles, while every rule keeps reading Mode / Kelvin / Tint.
+        assertEquals(mapOf("Mode" to "Preset", "Kelvin" to "Kelvin", "Tint" to "Tint"), sheet.tabLabels)
+        assertEquals(listOf("Mode", "Kelvin", "Tint"), sheet.tabs.map { it.label })
+        // Kelvin keeps the body's own readouts; the preset drum draws words.
+        assertTrue(sheet.tabs[1].valueLabels.isEmpty())
+        assertEquals(mapOf("Auto" to "Auto", "Sunny" to "Sunny", "Cloudy" to "Cloudy"), sheet.tabs[0].valueLabels)
+        // A tab the host has no words for keeps its own label.
+        val iso = videoLadderPresentation(picker(
+            MonitorPickerKind.ISO,
+            mode("ISO", CameraControl.ISO, "800", listOf("800"))))
+        assertTrue(iso.tabLabels.isEmpty())
+    }
+
     private fun irisMode() = mode("Iris", CameraControl.IRIS, "f/2.8", listOf("f/2.8"))
 
     private fun picker(

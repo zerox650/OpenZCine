@@ -18,6 +18,7 @@ import com.opencapture.opencine.core.SettingKey
 import com.opencapture.opencine.vocabulary.LadderWrite
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import java.util.Locale
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -27,7 +28,11 @@ import com.opencapture.opencine.nikon.WbPickerPolicy
 import com.opencapture.opencine.runtime.nativeFeedContentRect
 
 class MonitorCameraControlsTest {
-    private val strings = PhoneStringResolver { resource, _ -> resource.toString() }
+    // The bundled English copy, so assertions read the words an operator sees rather than resource ids.
+    private val strings = PhoneStringResolver { resource, args ->
+        val template = APP_ENGLISH_STRINGS[resource].orEmpty()
+        if (args.isEmpty()) template else String.format(Locale.US, template, *args)
+    }
 
     @Test
     fun `white balance drawer keeps canonical copy and maps display tabs to camera modes`() {
@@ -160,9 +165,9 @@ class MonitorCameraControlsTest {
         )
         assertEquals(WbPickerPolicy.SUBTITLE, settings[3].picker?.subtitle)
         assertEquals(0, settings[3].picker?.initialModeIndex) // 5560K → Kelvin
-        // iOS CameraPicker.focus: AF Mode / Area / Subject (independent tabs).
+        // iOS CameraPicker.focus: AF mode / Area / Subject (independent tabs).
         assertEquals(
-            listOf("AF Mode", "Area", "Subject"),
+            listOf("AF mode", "Area", "Subject"),
             settings[4].picker?.modes?.map(MonitorPickerModePresentation::label),
         )
         assertEquals(

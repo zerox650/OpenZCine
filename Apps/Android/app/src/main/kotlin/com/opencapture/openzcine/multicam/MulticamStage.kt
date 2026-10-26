@@ -47,7 +47,6 @@ import com.opencapture.opencine.appkit.MultiviewStageServices
 import com.opencapture.opencine.appkit.MultiviewStageServicesProvider
 import com.opencapture.opencine.appkit.MultiviewToolAvailability
 import com.opencapture.opencine.appkit.LocalMultiviewStageVisible
-import com.opencapture.opencine.appkit.MultiviewNetworkRestore
 import com.opencapture.opencine.appkit.MultiviewStageActions
 import com.opencapture.opencine.appkit.MultiviewTally
 import com.opencapture.opencine.media.storageReadout
@@ -204,12 +203,12 @@ fun MulticamStage(
     if (leaving) {
         AlertDialog(
             onDismissRequest = { leaving = false },
-            text = { Text(MultiviewNetworkRestore.NONE.closeQuestion) },
+            text = { Text(stringResource(R.string.multicam_close_question)) },
             confirmButton = {
                 TextButton(onClick = {
                     leaving = false
                     close()
-                }) { Text(MultiviewNetworkRestore.CLOSE_ACTION) }
+                }) { Text(stringResource(R.string.multicam_close_monitoring)) }
             },
             dismissButton = { TextButton(onClick = { leaving = false }) { Text(stringResource(R.string.action_cancel)) } },
         )

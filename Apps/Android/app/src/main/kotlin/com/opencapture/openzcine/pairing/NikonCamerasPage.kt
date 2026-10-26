@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -152,7 +153,7 @@ private fun addSetupFlow(
         group.firstOrNull()
             ?: run {
                 androidx.compose.runtime.LaunchedEffect(camera.id) { done(null) }
-                return AddSetupFlow(stationSetupChooser(camera, emptyList()), onSelect = {}, onCancel = { done(null) })
+                return AddSetupFlow(stationSetupChooser(camera, emptyList(), context = LocalContext.current), onSelect = {}, onCancel = { done(null) })
             }
     // Asked for here only: naming a network is the one thing this permission buys, and a second
     // router setup is the one place the name is needed.
@@ -169,7 +170,7 @@ private fun addSetupFlow(
         AddSetupNotice("networkName", stringResource(R.string.saved_setup_router_name_permission), stringResource(R.string.saved_setup_router_name_permission_action))
     } else null
     return AddSetupFlow(
-        chooser = stationSetupChooser(camera, routes, notice),
+        chooser = stationSetupChooser(camera, routes, notice, context = LocalContext.current),
         onSelect = { option ->
             if (option.kind == RouteKind.CAMERA_ACCESS_POINT && !apKeyStored) {
                 done(null)

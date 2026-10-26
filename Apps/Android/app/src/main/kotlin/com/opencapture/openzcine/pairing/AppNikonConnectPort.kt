@@ -191,7 +191,7 @@ internal class AppNikonConnectPort(
         val approved = takingOverConfirmed || (request is NikonConnectRequest.Discovered && request.takeOver)
         if (held != null && !approved) {
             throw NikonConnectException(
-                NikonIntegration.failure(ConnectionFailure.Reason.HeldElsewhere, "held", NikonTakeOverPrompt.message(held.heldByDeviceName)),
+                localized(NikonIntegration.failure(ConnectionFailure.Reason.HeldElsewhere, "held", NikonTakeOverPrompt.message(held.heldByDeviceName))),
             )
         }
         if (request is NikonConnectRequest.Saved && record.transport == SavedCameraTransport.USB_C) {
@@ -203,7 +203,7 @@ internal class AppNikonConnectPort(
             } catch (error: SavedCameraConnectException) {
                 throw if (error.wifiOff) {
                     NikonConnectException(
-                        NikonIntegration.failure(ConnectionFailure.Reason.RadioOff(ConnectionFailure.Radio.WIFI), "wifi.off", error.message.orEmpty())
+                        localized(NikonIntegration.failure(ConnectionFailure.Reason.RadioOff(ConnectionFailure.Radio.WIFI), "wifi.off", error.message.orEmpty()))
                             .copy(actions = listOf(RecoveryAction.OpenSettings, RecoveryAction.Retry)),
                     )
                 } else {
@@ -224,8 +224,15 @@ internal class AppNikonConnectPort(
     /** A fresh presence sweep: the list's held rows can predate the phone that went live. */
     override suspend fun currentHolder(host: String): String? = connector.currentHolder(host)
 
+    /**
+     * The shared failure with this app's heading: the integration builds the reason, actions and
+     * diagnostics code, the port supplies the title in the operator's language.
+     */
+    private fun localized(failure: ConnectionFailure): ConnectionFailure =
+        failure.copy(title = copy.text(R.string.connect_failed_title))
+
     private fun failure(reason: ConnectionFailure.Reason, code: String, message: String): NikonConnectException {
-        val failure = NikonIntegration.failure(reason, code, message)
+        val failure = localized(NikonIntegration.failure(reason, code, message))
         return NikonConnectException(
             if (offersDiagnostics) {
                 failure.copy(actions = failure.actions + RecoveryAction.Integration(DIAGNOSTICS, "Share diagnostics"))

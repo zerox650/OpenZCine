@@ -411,7 +411,13 @@ private fun sharingSource(session: CameraSession?, sharing: com.opencapture.open
             stringResource(R.string.help_sharing_watching), stringResource(R.string.sharing_watching_count, it.watcherCount)) },
         priority = MonitorSettingsChoiceSource(stringResource(R.string.sharing_broadcast_priority),
             stringResource(R.string.help_sharing_priority), com.opencapture.openzcine.core.RelayEncoderProfile.entries.map {
-                MonitorDisplayChoice(it.wireValue.toString(), it.title)
+                // The wire value stays the identity; only the drawn stance resolves in this language.
+                MonitorDisplayChoice(it.wireValue.toString(),
+                    if (it == com.opencapture.openzcine.core.RelayEncoderProfile.LOW_LATENCY) {
+                        stringResource(R.string.sharing_priority_low_latency)
+                    } else {
+                        stringResource(R.string.sharing_priority_quality)
+                    })
             }, profile.wireValue.toString(), select = { id ->
                 com.opencapture.openzcine.core.RelayEncoderProfile.entries.firstOrNull { it.wireValue.toString() == id }?.let {
                     settings.relayEncoderProfile.value = it.wireValue; sharing?.encoderProfile = it; feedback()
