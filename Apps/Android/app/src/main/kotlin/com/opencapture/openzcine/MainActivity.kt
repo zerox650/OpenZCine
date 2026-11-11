@@ -1084,7 +1084,15 @@ class MainActivity : ComponentActivity() {
                                 null
                             }
                         LaunchedEffect(active, returnToMulticam != null) {
-                            val adapter = native?.takeIf { returnToMulticam == null && demo == null }?.let {
+                            // A Windows-seeded Swift core predates gyro's move into OpenCine and
+                            // exports none of the GyroNative JNI symbols. Unlike the coordinator,
+                            // NikonGyroCameraAdapter calls cameraDown straight from the live-frame
+                            // metadata flow, outside the nativeUsable gate, so it crashes as soon
+                            // as a camera connects. Bind it only when the exports really exist;
+                            // a fully staged core sets isAvailable and gyro returns on its own.
+                            val adapter = native?.takeIf {
+                                returnToMulticam == null && demo == null && GyroNative.isAvailable
+                            }?.let {
                                 NikonGyroCameraAdapter(
                                     it,
                                     it.liveFrames as? SwiftCoreLiveFrameSource,
