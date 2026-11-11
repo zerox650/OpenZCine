@@ -236,6 +236,8 @@ val stageSwiftCore = tasks.register<Exec>("stageSwiftCore") {
                 "Sources/OpenCineCameraVocabulary/**",
                 "Sources/OpenCineFrameIO/**",
                 "Sources/OpenCineFrameIOAndroid/**",
+                "Sources/OpenCineGyro/**",
+                "Sources/OpenCineGyroAndroid/**",
                 "Sources/OpenCineNikon/**",
                 "Sources/OpenCineNikonAndroid/**",
                 "Sources/OpenCineJNISupport/**",
@@ -372,6 +374,8 @@ dependencies {
     implementation(libs.opencine.camera.controls)
     // Shared prepared PCM sampling and decoded-audio source lifetime.
     implementation(libs.opencine.native.runtime)
+    // The still viewer's peaking, false colour and zebra on the photo itself (MonitorBitmapStillLook).
+    implementation("com.opencapture.opencine:appkit-native:0.1.0-SNAPSHOT")
     // Shared Media3 player recipe, port, transport mapping and audio meter tap.
     implementation(libs.opencine.media3)
     // Shared Vulkan renderer: the Bitmap probe and its legacy OpcVulkan JNI class.
@@ -389,6 +393,7 @@ dependencies {
     implementation("com.opencapture.opencine:appkit-sentry:0.1.0-SNAPSHOT")
     // The one Frame.io owner (sign-in, upload, history, hop lease) over FrameioNative (A4-09).
     implementation("com.opencapture.opencine:frameio:0.1.0-SNAPSHOT")
+    implementation("com.opencapture.opencine:gyro:0.1.0-SNAPSHOT")
 
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -416,6 +421,7 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.json)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(testFixtures("com.opencapture.opencine:gyro:0.1.0-SNAPSHOT"))
 
     // NikonFeedIncidentProducerTest asserts with kotlin.test, as the unit tests do.
     androidTestImplementation(libs.kotlin.test.junit)

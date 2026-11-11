@@ -49,6 +49,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.runtime.setValue
 import com.opencapture.opencine.appkit.*
 import com.opencapture.opencine.media.MediaCatalog
@@ -247,7 +248,9 @@ internal fun MediaBrowseScreen(
         NikonMediaLibraryActions(libraryIndex, cacheStore, { library }, { libraryCodec })
     }
     val emptyLibraryState = remember(cameraID) { kotlinx.coroutines.flow.MutableStateFlow(MonitorMediaLibraryState<NikonLibraryClip>()) }
-    val libraryState by (library?.state ?: emptyLibraryState).collectAsState()
+    // This screen reads no transfer ticks: the library's content flow leaves them out, so a streaming
+    // download does not recompose the whole browser (and re-run its projection inputs) on every chunk.
+    val libraryState by (library?.content ?: emptyLibraryState).collectAsState()
     DisposableEffect(library, mediaService) {
         val retired = library
         onDispose {
@@ -401,7 +404,12 @@ internal fun MediaBrowseScreen(
             offlineClipOwners = emptyMap(); browseStorageSlots = null
             libraryCodec?.beginListing()
             if (actual.state.value.browsing) actual.refresh() else actual.begin()
-            actual.state.collect { snapshot ->
+            // A transfer tick or a cache scan changes nothing this listing reads: skip those emissions
+            // instead of re-mapping and re-sorting the whole catalog on each one.
+            actual.state.distinctUntilChanged { old, new ->
+                old.catalog === new.catalog && old.records === new.records && old.browsing == new.browsing &&
+                    old.fetching == new.fetching && old.catalogPageCount == new.catalogPageCount && old.note == new.note
+            }.collect { snapshot ->
                 val binding = actual.binding
                 if (library !== actual || !snapshot.browsing) return@collect
                 val clips = if (binding != null && connectedSource.isCurrent(binding)) {
@@ -619,6 +627,7 @@ internal fun MediaBrowseScreen(
                     }, dismiss = { deliveryPopup = null; exitSelection() }),
                 presentation = sourcePresentation,
                 sourceFilter = { action -> updateFilters(filters.applying(action, filterOptions)) },
+                aspectRatio = { record -> mediaClipAspectRatio(record.payload) },
                 cell = { record, cell -> mediaClipCellPresentation(record.payload.clip, record.payload.bucket,
                     record.favorite, projection.hasRawSibling(record.payload.clip, ::clipKey),
                     burstByRepresentative[clipKey(record.payload.clip)]?.count, cell.list, cell.selecting, cell.selected) },
@@ -863,17 +872,17 @@ private fun ClipArtwork(
                             SwiftCore.isAvailable &&
                             connectionOwner != null
                     ) {
-                        NikonNative.sessionThumbnail(connectionOwner, clip.handle.toInt())?.let { jpeg ->
-                            // The body's thumb bytes may be EXIF-stripped — fall back to the
-                            // orientation this session learned from the object's full file.
-                            val key = clip.libraryKey(cameraID)
-                            val orientation =
-                                MediaExifOrientation.fromBytes(jpeg)
-                                    ?.also { MediaExifOrientation.learn(key, it) }
-                                    ?: MediaExifOrientation.learned(key)
-                            MonitorBitmapDecoder.decode(jpeg, MonitorBitmapDecoder.THUMBNAIL_EDGE)
-                                ?.upright(orientation)
-                                ?.asImageBitmap()
+                        // Tagged with the still's own orientation by the shared Nikon layer; one that
+                        // carries none falls back to what this session learned from the full file.
+                        NikonNative.sessionUprightThumbnail(connectionOwner, clip.handle.toInt(), clip.filename)?.let { jpeg ->
+                            // The tag answers the still's orientation, which also sizes its grid card.
+                            MonitorBitmapDecoder.exifOrientation(jpeg)?.let {
+                                MediaExifOrientation.learn(clip.libraryKey(cameraID), it)
+                            }
+                            MonitorBitmapDecoder.decode(
+                                jpeg, MonitorBitmapDecoder.THUMBNAIL_EDGE,
+                                fallbackOrientation = MediaExifOrientation.learned(clip.libraryKey(cameraID)),
+                            )?.asImageBitmap()
                         }
                     } else {
                         null
@@ -902,12 +911,9 @@ private fun cachedStillThumbnail(
             )
         }.getOrNull() ?: return null
     if (!java.nio.file.Files.isRegularFile(entry.finalPath, LinkOption.NOFOLLOW_LINKS)) return null
-    // The full file carries the orientation header: learn it for the object so the
-    // connected grid's (possibly EXIF-stripped) camera thumbs rotate too.
-    val orientation =
-        MediaExifOrientation.fromFile(entry.finalPath)?.also {
-            MediaExifOrientation.learn(clip.libraryKey(cameraID), it)
-        }
-    return MonitorBitmapDecoder.decode(entry.finalPath.toFile(), MonitorBitmapDecoder.THUMBNAIL_EDGE)
-        ?.upright(orientation)?.asImageBitmap()
+    // The full file carries the orientation header: learn it for the object so the connected
+    // grid's camera thumbnails that carry none rotate too. The decoder turns the file itself.
+    val file = entry.finalPath.toFile()
+    MonitorBitmapDecoder.exifOrientation(file)?.let { MediaExifOrientation.learn(clip.libraryKey(cameraID), it) }
+    return MonitorBitmapDecoder.decode(file, MonitorBitmapDecoder.THUMBNAIL_EDGE)?.asImageBitmap()
 }

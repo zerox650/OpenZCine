@@ -38,8 +38,7 @@ final class ScreenMatrix: OpenCineAppUITesting.ScreenMatrix {}
 final class ConformanceCoverageTests: OpenCineAppUITesting.ConformanceCoverageTests {}
 /// SIMULATED launch configuration only; layout and pixel assertions stay in OpenCine.
 final class MonitorScreenshotLayoutTests: OpenCineAppUITesting.MonitorScreenshotLayoutTests {
-    override var expectedStorageText: String { "521 GB" }
-    override var expectedPortraitStorageText: String { "521GB" }
+    override var expectedStorageText: String { "521GB" }
     override var expectedCameraPowerValue: String { "4 of 5 bars" }
     override var expectedCameraPercentText: String? { nil }
     override var reviewLaunchEnvironment: [String: String] {
@@ -133,7 +132,8 @@ final class ConnectFunnelAdoptionTests: XCTestCase {
         defer { XCUIDevice.shared.orientation = .portrait }
         // With the progress sheet (first frame pending) and without it (live view never started).
         for (mode, line) in [
-            ("standalone", "Starting live view"), ("neverStarted", "SIMULATED live view did not start"),
+            ("standalone", "Starting live view"),
+            ("neverStarted", "SIMULATED live view did not start"),
         ] {
             let app = XCUIApplication()
             app.launchEnvironment["ZC_DEMO_SAVED_PATHS"] = "1"
@@ -193,7 +193,8 @@ final class ConnectFunnelAdoptionTests: XCTestCase {
         defer { app.terminate() }
         let splash = app.descendants(matching: .any)["monitor-launch-splash"]
         let addSetup = app.buttons["cameras.addSetup"].firstMatch
-        XCTAssertTrue(splash.waitForExistence(timeout: 10), "the launch splash must be in the AX tree")
+        XCTAssertTrue(
+            splash.waitForExistence(timeout: 10), "the launch splash must be in the AX tree")
         var coveredSamples = 0
         let deadline = Date().addingTimeInterval(15)
         while splash.exists, Date() < deadline {
@@ -210,7 +211,6 @@ final class ConnectFunnelAdoptionTests: XCTestCase {
         addSetup.tap()
         XCTAssertTrue(app.buttons["addSetup.usbC"].waitForExistence(timeout: 5))
     }
-
 
     func testSharedProgressSurvivesPostHandshakePreparation() {
         XCUIDevice.shared.orientation = .landscapeLeft
@@ -253,7 +253,8 @@ final class FirstRunWizardTests: XCTestCase {
         let wizard = app.staticTexts.matching(
             NSPredicate(format: "label IN %@", ["Choose how to connect", "Allow permissions"])
         ).firstMatch
-        XCTAssertTrue(wizard.waitForExistence(timeout: 15), "first run must open the transport wizard")
+        XCTAssertTrue(
+            wizard.waitForExistence(timeout: 15), "first run must open the transport wizard")
         XCTAssertFalse(app.staticTexts["Find your camera"].exists, "not the bare shared pair page")
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "SIMULATED-first-run-wizard-landscape"
@@ -621,11 +622,13 @@ final class NikonSharedEVMeterUITests: SharedAppUITestCase {
             let meter = app.descendants(matching: .any)["monitor.ev.meter"]
             XCTAssertTrue(meter.waitForExistence(timeout: 20), "The shared EV meter must be shown")
             let reading = XCTNSPredicateExpectation(
-                predicate: NSPredicate(format: "value == %@", "Camera exposure +0.7 EV"), object: meter)
+                predicate: NSPredicate(format: "value == %@", "Camera exposure +0.7 EV"),
+                object: meter)
             XCTAssertEqual(XCTWaiter.wait(for: [reading], timeout: 10), .completed)
             XCTAssertTrue(app.frame.contains(meter.frame), "The meter must be on screen")
             let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            shot.name = "SIMULATED Z shared EV meter \(orientation == .portrait ? "portrait" : "landscape")"
+            shot.name =
+                "SIMULATED Z shared EV meter \(orientation == .portrait ? "portrait" : "landscape")"
             shot.lifetime = .keepAlways
             add(shot)
         }
@@ -660,7 +663,8 @@ final class SettingsUIFlowTests: SharedAppUITestCase {
                 button.tap()
                 XCTAssertTrue(button.isSelected)
                 if tab == .display {
-                    XCTAssertTrue(app.staticTexts["HDR display"].firstMatch.waitForExistence(timeout: 5))
+                    XCTAssertTrue(
+                        app.staticTexts["HDR display"].firstMatch.waitForExistence(timeout: 5))
                 }
                 let slug = tab.rawValue.lowercased().replacingOccurrences(of: " ", with: "-")
                 capture("z-settings-\(slug)-\(side)")
@@ -727,7 +731,8 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
         continueAfterFailure = false
         open()
         let side = app.descendants(matching: .any)["monitor.command.side"]
-        XCTAssertTrue(side.waitForExistence(timeout: 10), "The side column is one labelled container")
+        XCTAssertTrue(
+            side.waitForExistence(timeout: 10), "The side column is one labelled container")
         XCTAssertEqual(
             side.label,
             "Image, Focus, Audio, and Monitor controls. Swipe up to reveal more command controls.")
@@ -746,11 +751,13 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
         continueAfterFailure = false
         open()
         rotate(.portrait, settling: tiles.firstMatch)
-        let scroller = app.scrollViews.containing(.any, identifier: "monitor.command.tile.iso").firstMatch
+        let scroller = app.scrollViews.containing(.any, identifier: "monitor.command.tile.iso")
+            .firstMatch
         XCTAssertTrue(scroller.waitForExistence(timeout: 10))
         XCTAssertGreaterThanOrEqual(
             scroller.frame.height, 246,
-            "The portrait viewport must show the three 76-point primary rows and their two 9-point gaps")
+            "The portrait viewport must show the three 76-point primary rows and their two 9-point gaps"
+        )
         XCTAssertFalse(
             app.buttons["monitor.system.focusReset"].exists,
             "Picture-only recenter controls must not cover the command dashboard")
@@ -758,11 +765,13 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
             let tile = tiles.matching(identifier: identifier).firstMatch
             XCTAssertTrue(
                 contained(tile, in: scroller),
-                "The whole primary tile \(identifier) \(tile.frame) must fit inside \(scroller.frame)")
+                "The whole primary tile \(identifier) \(tile.frame) must fit inside \(scroller.frame)"
+            )
         }
         scroller.swipeUp()
         let last = app.buttons["Grid"]
-        XCTAssertTrue(contained(last, in: scroller), "Scrolling reaches the complete final read-only cell")
+        XCTAssertTrue(
+            contained(last, in: scroller), "Scrolling reaches the complete final read-only cell")
         capture("z-command-dashboard-portrait-scrolled-end")
     }
 
@@ -772,22 +781,27 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
         open()
         let side = app.descendants(matching: .any)["monitor.command.side"]
         let more = app.descendants(matching: .any)["monitor.command.more"]
-        XCTAssertTrue(more.waitForExistence(timeout: 10), "The overflowing side column must show its scroll cue")
+        XCTAssertTrue(
+            more.waitForExistence(timeout: 10),
+            "The overflowing side column must show its scroll cue")
         XCTAssertEqual(more.label, "More command controls below. Swipe up to reveal them.")
         side.swipeUp()
-        XCTAssertTrue(contained(app.buttons["Grid"], in: side), "Scrolling reaches the final read-only cell")
-        XCTAssertTrue(more.waitForNonExistence(timeout: 10), "The cue clears at the actual content bottom")
+        XCTAssertTrue(
+            contained(app.buttons["Grid"], in: side), "Scrolling reaches the final read-only cell")
+        XCTAssertTrue(
+            more.waitForNonExistence(timeout: 10), "The cue clears at the actual content bottom")
         capture("z-command-dashboard-landscape-scrolled-end")
     }
 
     @MainActor private func contained(_ element: XCUIElement, in viewport: XCUIElement) -> Bool {
-        let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            MainActor.assumeIsolated {
-                element.exists && !element.frame.isEmpty
-                    // Native accessibility edges can round by one display point.
-                    && viewport.frame.insetBy(dx: -1, dy: -1).contains(element.frame)
-            }
-        }, object: nil)
+        let visible = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                MainActor.assumeIsolated {
+                    element.exists && !element.frame.isEmpty
+                        // Native accessibility edges can round by one display point.
+                        && viewport.frame.insetBy(dx: -1, dy: -1).contains(element.frame)
+                }
+            }, object: nil)
         return XCTWaiter().wait(for: [visible], timeout: 10) == .completed
     }
 
@@ -798,7 +812,8 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
     @MainActor private func open() {
         launch(ReviewLaunch(screen: .live), environment: environment)
         rotate(.landscapeLeft, settling: tiles.firstMatch)
-        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 30), "DISP 3 shows the command grid")
+        XCTAssertTrue(
+            tiles.firstMatch.waitForExistence(timeout: 30), "DISP 3 shows the command grid")
         XCTAssertTrue(waitUntilHittable(tiles.firstMatch, timeout: 15))
     }
 
@@ -812,7 +827,9 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
         let root = try app.snapshot()
         var found: [String: CGRect] = [:]
         func collect(_ element: XCUIElementSnapshot) {
-            if element.identifier.hasPrefix("monitor.command.tile."), found[element.identifier] == nil {
+            if element.identifier.hasPrefix("monitor.command.tile."),
+                found[element.identifier] == nil
+            {
                 found[element.identifier] = element.frame
             }
             element.children.forEach(collect)
@@ -826,9 +843,10 @@ final class CommandGridReorderUITests: SharedAppUITestCase {
     }
 
     @MainActor private func waitFor(_ expected: [String]) -> Bool {
-        let arranged = XCTNSPredicateExpectation(predicate: NSPredicate { [self] _, _ in
-            MainActor.assumeIsolated { (try? order()) == expected }
-        }, object: nil)
+        let arranged = XCTNSPredicateExpectation(
+            predicate: NSPredicate { [self] _, _ in
+                MainActor.assumeIsolated { (try? order()) == expected }
+            }, object: nil)
         return XCTWaiter().wait(for: [arranged], timeout: 10) == .completed
     }
 
@@ -857,7 +875,8 @@ final class CommandGridScreenshotUITests: SharedAppUITestCase {
         XCTAssertTrue(tile.waitForExistence(timeout: 30), "The dashboard must mount before capture")
         for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
             rotate(orientation, settling: tile)
-            XCTAssertTrue(waitUntilHittable(tile), "The mounted dashboard must clear the launch splash")
+            XCTAssertTrue(
+                waitUntilHittable(tile), "The mounted dashboard must clear the launch splash")
             capture("z-command-dashboard-\(orientation == .portrait ? "portrait" : "landscape")")
         }
     }
@@ -990,435 +1009,46 @@ final class GroupedStabilizationInputUITests: XCTestCase {
     }
 }
 
-// The receipt value types below mirror the app-side definitions in RunnerTests
-// (`GyroCaptureTests.swift`): the accepted cross-process contract keeps one shape on both
-// sides, carried by the `NativeUIReceiptBridge` container convention.
-
-/// Screen-space point as the app observed it; the reader taps exactly this point.
-struct GyroReachPoint: Codable, Equatable {
-    let x: Double
-    let y: Double
-    let nativeX: Double
-    let nativeY: Double
-
-    var nativePoint: CGPoint { CGPoint(x: nativeX, y: nativeY) }
-    var point: CGPoint { CGPoint(x: x, y: y) }
-    var finite: Bool { [x, y, nativeX, nativeY].allSatisfy(\.isFinite) }
-}
-
-/// Screen-space rectangle; the reader compares its device-coordinate edges at screen scale.
-struct GyroReachRect: Codable, Equatable {
-    let x: Double
-    let y: Double
-    let width: Double
-    let height: Double
-
-    init(_ rect: CGRect) {
-        x = min(rect.origin.x, rect.origin.x + rect.size.width)
-        y = min(rect.origin.y, rect.origin.y + rect.size.height)
-        width = rect.size.width
-        height = rect.size.height
-    }
-
-    var rect: CGRect {
-        CGRect(origin: CGPoint(x: x, y: y), size: CGSize(width: width, height: height))
-    }
-
-    func contains(_ point: GyroReachPoint, margin: Double = 0) -> Bool {
-        point.x >= x - margin && point.x < x + width + margin
-            && point.y >= y - margin && point.y < y + height + margin
-    }
-
-    var finite: Bool { [x, y, width, height].allSatisfy(\.isFinite) && width > 0 && height > 0 }
-}
-
-/// One gyro control as the reader must see it: identity, painted and expanded frames, and
-/// a reach point 2pt inside the expanded lower edge.
-struct GyroReachControl: Codable, Equatable {
-    let identifier: String?
-    let label: String?
-    let button: Bool
-    let axFrame: GyroReachRect
-    let textFrame: GyroReachRect?
-    let expandedFrame: GyroReachRect
-    let reachPoint: GyroReachPoint
-}
-
-/// The owner observation snapshot the reader waits on.
-struct GyroReachOutcome: Codable, Equatable {
-    let calibrationPoseCount: Int
-    let calibrationInProgress: Bool
-    let mountCalibrationSaved: Bool
-    let logsPresented: Bool
-    let logsCount: Int
-    let presentedClass: String?
-}
-
-/// The app-published reach receipt, bridged from the host app's container.
-struct GyroReachReceipt: Codable {
-    let schema: Int
-    let nonce: String
-    let sourceSeal: String
-    let bundleID: String
-    let simulatorID: String
-    let processID: Int32
-    let sequence: UInt64
-    let observedAt: Double
-    let mode: String
-    let foreground: Bool
-    let keyWindow: Bool
-    let rootMounted: Bool
-    let rootFillsScene: Bool
-    let sceneID: String
-    let windowIdentity: String
-    let windowFrame: GyroReachRect
-    let screenFrame: GyroReachRect
-    let screenScale: Double
-    let orientation: Int
-    let controls: [GyroReachControl]
-    let outsidePoint: GyroReachPoint?
-    let neighborPoint: GyroReachPoint?
-    let outcome: GyroReachOutcome
-    let ownerObservations: [String]
-}
-
-/// Attach-only native input for the gyro 44pt reach proof.
-///
-/// Input only: attaches to the unit-test host (the real Runner app) mounting the gyro
-/// fixture in its actual scene; never launches, activates or drives the product UI. Every
-/// tap is a public `XCUICoordinate.tap()` at a point the app published in its receipt, and
-/// the outcome is the app's own coordinator state, bridged back as receipt revisions.
-/// Outside the focused native input envelope the whole case skips.
-@MainActor
-final class GyroNativeInputUITests: XCTestCase {
-    private var nonce = ""
-    private var sourceSeal = ""
-    private var bundleID = ""
-    private var simulatorID = ""
-    private var receiptURL: URL!
-    private var finalSequence: UInt64 = 0
-
-    func testSupplyNativeInputToTheGyroReachProof() async throws {
+/// SIMULATED owner hardware pass 2026-10-28: a photography value slides straight into a new
+/// value in one motion (press, drag, lift), as every readout does in the other apps.
+final class NikonPhotoQuickDragUITests: SharedAppUITestCase {
+    @MainActor
+    func testSIMULATEDPhotoValuesPressAndDragInOneMotion() throws {
+        #if !targetEnvironment(simulator)
+            throw XCTSkip("SIMULATED quick staging requires a private simulator")
+        #endif
         continueAfterFailure = false
-        let env = ProcessInfo.processInfo.environment
-        guard env["OPENCINE_NATIVE_UI_MODE"] != nil else {
-            throw XCTSkip("The gyro reach reader needs the native input bridge envelope.")
+        app = XCUIApplication()
+        app.launchEnvironment.merge(
+            [
+                "ZC_DEMO_AUTOSTART": "1", "ZC_DEMO_QUICK_SETTINGS": "1", "ZC_DEMO_DISP": "live",
+                "ZC_DEMO_GRAPHICAL_REVIEW": "1", "ZC_DEMO_PHOTO": "1",
+            ]
+        ) { _, value in value }
+        app.launch()
+        defer {
+            app.terminate()
+            XCUIDevice.shared.orientation = .portrait
         }
-        guard env["OPENCINE_NATIVE_UI_MODE"] == "gyro-hosted-native-input",
-            let nonce = env["OPENCINE_NATIVE_UI_NONCE"], UUID(uuidString: nonce) != nil,
-            let sourceSeal = env["OPENCINE_NATIVE_UI_SOURCE_SEAL"], sourceSeal.count == 64,
-            let bundleID = env["OPENCINE_NATIVE_UI_BUNDLE_ID"],
-            let simulatorID = env["SIMULATOR_UDID"], UUID(uuidString: simulatorID) != nil
-        else {
-            XCTFail("The native input envelope is incomplete.")
-            return
-        }
-        self.nonce = nonce
-        self.sourceSeal = sourceSeal
-        self.bundleID = bundleID
-        self.simulatorID = simulatorID
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "SIMULATED-native-reader-" + nonce, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
-        receiptURL = directory.appendingPathComponent("app-receipt.json")
-        FileHandle.standardOutput.write(
-            Data("SIMULATED_NATIVE_UI_INBOX:\(receiptURL.path)\n".utf8))
-        // Input only: attaches to the hosted bundle; never launch or activate.
-        let app = XCUIApplication(bundleIdentifier: bundleID)
-        var notes: [String] = []
-        var tapInvoked = 0
-        defer { recordOutcome(tapInvoked: tapInvoked, notes: notes) }
-
-        let initial = try await receipt(deadline: .seconds(90)) {
-            $0.mode == "gyro-restart-ready" && $0.outcome.calibrationPoseCount == 2
-        }
-        try verifyIdentity(initial, app: app)
-        try verifyGeometry(initial)
-        notes.append("identity and geometry verified for \(initial.controls.count) controls")
-
-        // Outside negative: outside every expanded control region nothing may react. The
-        // app-side test asserts the same unchanged outcome independently.
-        let outside = try XCTUnwrap(initial.outsidePoint)
-        try tap(outside, app: app)
-        tapInvoked += 1
-        try await requireUnchanged(since: initial, window: .seconds(3), what: "outside negative")
-
-        // Reach: restart. Restarting resets the pose sequence to zero.
-        try await reach(
-            "gyro.calibration.restart", from: initial, app: app,
-            until: { $0.mode == "gyro-cancel-ready" && $0.outcome.calibrationPoseCount == 0 })
-        tapInvoked += 1
-        notes.append("restart: poses 0")
-
-        // Reach: cancel. Ending the calibration is the cancel control's outcome.
-        try await reach(
-            "gyro.calibration.cancel", app: app,
-            until: {
-                $0.mode == "gyro-capture-ready" && $0.outcome.calibrationInProgress
-                    && $0.ownerObservations.contains("cancel: in progress false")
-            })
-        tapInvoked += 1
-        notes.append("cancel: in progress false")
-
-        // Reach: capture. A fresh first pose must be capturable through the 44pt region.
-        try await reach(
-            "gyro.calibration.capture", app: app,
-            until: {
-                // The fixture verifies pose 1 before cancelling calibration to prepare logs.
-                // Keep that original owner observation instead of asserting on the reset state.
-                $0.mode == "gyro-logs-ready"
-                    && $0.ownerObservations.contains("capture: poses 1, in progress true")
-            })
-        tapInvoked += 1
-        notes.append("capture: poses 1")
-
-        // Neighbor negative: in the passive area above the Share/Delete gap, outside both
-        // action bands, nothing may react.
-        let logsReceipt = try await receipt(deadline: .seconds(30)) {
-            $0.mode == "gyro-logs-ready"
-        }
-        try verifyGeometry(logsReceipt)
-        let neighbor = try XCTUnwrap(logsReceipt.neighborPoint)
-        try tap(neighbor, app: app)
-        tapInvoked += 1
-        try await requireUnchanged(
-            since: logsReceipt, window: .seconds(3), what: "neighbor negative")
-
-        // Reach: the status pill. `openLogs` is the coordinator's own observation.
-        try await reach(
-            "monitor.gyroStatus", app: app,
-            until: { $0.mode == "gyro-share-ready" && $0.outcome.logsPresented })
-        tapInvoked += 1
-        notes.append("status: logs presented")
-
-        let shareReceipt = try await receipt(deadline: .seconds(30)) {
-            $0.mode == "gyro-share-ready"
-        }
-        try tapReach(
-            try control(labelled: "Share", in: shareReceipt), app: app, receipt: shareReceipt)
-        tapInvoked += 1
-        _ = try await receipt(deadline: .seconds(30)) { $0.outcome.presentedClass != nil }
-        notes.append("share: system sheet presented")
-        let closeShare = app.buttons["Close"].firstMatch
-        XCTAssertTrue(closeShare.waitForExistence(timeout: 15), "The real Share sheet must close")
-        closeShare.tap()
-        tapInvoked += 1
-
-        // Reach: delete. The confirmation dialog exists beforehand and is gone after the
-        // destructive confirm; the coordinator's own delete empties the logs.
-        let deleteReceipt = try await receipt(deadline: .seconds(30)) {
-            $0.mode == "gyro-delete-ready"
-        }
-        let deleteControl = try control(labelled: "Delete", in: deleteReceipt)
-        try tapReach(deleteControl, app: app, receipt: deleteReceipt)
-        tapInvoked += 1
-        var dialogButton = app.sheets.buttons["Delete"].firstMatch
-        if !dialogButton.waitForExistence(timeout: 15) {
-            dialogButton = app.alerts.buttons["Delete"].firstMatch
-            XCTAssertTrue(
-                dialogButton.waitForExistence(timeout: 15),
-                "The confirmation dialog must exist")
-        }
-        notes.append("delete: confirmation dialog present")
-        dialogButton.tap()
-        tapInvoked += 1
-        let settled = try await receipt(deadline: .seconds(30)) {
-            $0.mode == "gyro-settled" && $0.outcome.logsCount == 0
-        }
-        XCTAssertEqual(app.sheets.count, 0, "The confirmation dialog must be gone")
-        XCTAssertEqual(settled.outcome.logsCount, 0, "The confirmed delete must empty the logs")
-        notes.append("delete: logs emptied after confirm")
-    }
-
-    // MARK: reader mechanics (accepted attach-only patterns)
-
-    private func require(_ condition: Bool, _ reason: String) throws {
-        if !condition {
-            throw NSError(
-                domain: "GyroReachReader", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: reason])
-        }
-    }
-
-    /// The accepted device-edge comparator at screen scale: floating-safe frame equality.
-    private func deviceEdges(_ frame: GyroReachRect, scale: Double) -> [Double] {
-        [
-            frame.x * scale, frame.y * scale,
-            (frame.x + frame.width) * scale, (frame.y + frame.height) * scale,
-        ]
-    }
-
-    private func verifyIdentity(_ receipt: GyroReachReceipt, app: XCUIApplication) throws {
-        try require(receipt.schema == 1, "Unexpected receipt schema")
-        try require(receipt.nonce == nonce, "Receipt nonce mismatch")
-        try require(receipt.sourceSeal == sourceSeal, "Receipt source seal mismatch")
-        try require(receipt.bundleID == bundleID, "Receipt bundle mismatch")
-        try require(
-            UUID(uuidString: receipt.simulatorID) == UUID(uuidString: simulatorID),
-            "Receipt simulator mismatch")
-        try require(receipt.processID > 0, "Receipt process id must be positive")
-        try require(receipt.foreground, "The host app must be foreground active")
-        try require(receipt.keyWindow, "The fixture window must be key")
-        try require(receipt.rootMounted && receipt.rootFillsScene, "The fixture root must fill")
-        try require(app.state == .runningForeground, "The host app must be running foreground")
-        let appFrame = GyroReachRect(app.frame)
-        try require(
-            receipt.screenScale > 0 && receipt.windowFrame.finite && appFrame.finite
-                && deviceEdges(appFrame, scale: receipt.screenScale)
-                    == deviceEdges(receipt.windowFrame, scale: receipt.screenScale),
-            "The app frame must match the receipt window at device edges")
-    }
-
-    /// Every control's expanded region meets the 44pt floor, and its reach point lies
-    /// inside that region and outside every sibling's.
-    private func verifyGeometry(_ receipt: GyroReachReceipt) throws {
-        for control in receipt.controls {
-            try require(
-                control.expandedFrame.finite, "The expanded frame must be finite")
-            try require(
-                control.expandedFrame.width >= 44 && control.expandedFrame.height >= 44,
-                "The expanded region must meet the 44pt floor")
-            try require(
-                control.expandedFrame.contains(control.reachPoint),
-                "The reach point must lie inside the expanded region")
-            for sibling in receipt.controls where sibling != control {
-                try require(
-                    !sibling.expandedFrame.contains(control.reachPoint, margin: 1),
-                    "The reach point must not sit inside a sibling's region")
+        for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
+            for identifier in ["monitor.capture.stillISO", "monitor.capture.stillShutter"] {
+                let readout = app.buttons[identifier]
+                XCTAssertTrue(readout.waitForExistence(timeout: 20), identifier)
+                rotate(orientation, settling: readout)
+                let before = try XCTUnwrap(readout.value as? String)
+                let start = readout.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                start.press(
+                    forDuration: 0.02, thenDragTo: start.withOffset(CGVector(dx: -120, dy: 0)))
+                let changed = XCTNSPredicateExpectation(
+                    predicate: NSPredicate(format: "value != %@", before), object: readout)
+                XCTAssertEqual(
+                    XCTWaiter.wait(for: [changed], timeout: 5), .completed,
+                    "\(identifier) must take the dragged value without a second touch")
+                XCTAssertFalse(
+                    app.buttons["monitor.capture.close"].exists,
+                    "A press-drag never leaves the drawer open")
+                capture("SIMULATED-photo-quick-drag-\(identifier)-\(orientation.rawValue)")
             }
         }
-    }
-
-    private func control(identifier: String, in receipt: GyroReachReceipt) throws
-        -> GyroReachControl
-    {
-        try XCTUnwrap(
-            receipt.controls.first { $0.identifier == identifier },
-            "Missing \(identifier) in the receipt")
-    }
-
-    private func control(labelled label: String, in receipt: GyroReachReceipt) throws
-        -> GyroReachControl
-    {
-        try XCTUnwrap(
-            receipt.controls.first { $0.label == label && $0.button },
-            "Missing the \(label) control in the receipt")
-    }
-
-    /// Builds the accepted coordinate from the app anchor and requires the dynamic
-    /// screenPoint to equal the app-observed point exactly before tapping.
-    private func tap(_ point: GyroReachPoint, app: XCUIApplication) throws {
-        try require(point.finite, "The tapped point must be finite")
-        let coordinate = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(
-            CGVector(dx: point.x - app.frame.minX, dy: point.y - app.frame.minY))
-        let actual = coordinate.screenPoint
-        print(
-            "GYRO_NATIVE_POINT: expected=\(point.nativePoint) scene=\(point.point) actual=\(actual) app=\(app.frame)"
-        )
-        try require(
-            actual == point.nativePoint,
-            "The reader coordinate \(actual) must equal the app-observed point \(point.nativePoint) exactly"
-        )
-        coordinate.tap()
-    }
-
-    /// Asserts a control's reach geometry before tapping its reach point.
-    private func tapReach(
-        _ control: GyroReachControl, app: XCUIApplication, receipt: GyroReachReceipt
-    ) throws {
-        try require(control.button, "A same-label StaticText must never replace the Button")
-        try require(
-            !(control.textFrame ?? control.axFrame).contains(control.reachPoint),
-            "The reach tap must be outside the observed compact paint frame")
-        try require(
-            control.expandedFrame.width >= 44 && control.expandedFrame.height >= 44,
-            "The control must declare a 44pt region")
-        try require(
-            control.expandedFrame.contains(control.reachPoint),
-            "The reach point must lie inside the expanded region")
-        for sibling in receipt.controls where sibling != control {
-            try require(
-                !sibling.expandedFrame.contains(control.reachPoint, margin: 1),
-                "The reach point must not sit inside a sibling's region")
-        }
-        try tap(control.reachPoint, app: app)
-    }
-
-    /// Taps the named control's reach point and waits for the next phase condition.
-    private func reach(
-        _ identifier: String, from current: GyroReachReceipt? = nil, app: XCUIApplication,
-        until condition: @escaping (GyroReachReceipt) -> Bool
-    ) async throws {
-        let source: GyroReachReceipt
-        if let current {
-            source = current
-        } else {
-            source = try await receipt(deadline: .seconds(30)) { _ in true }
-        }
-        let control = try control(identifier: identifier, in: source)
-        try tapReach(control, app: app, receipt: source)
-        _ = try await receipt(deadline: .seconds(30), condition)
-    }
-
-    /// The latest bridged receipt, identity-verified and fresh.
-    private func receipt(
-        deadline: Duration, _ condition: ((GyroReachReceipt) -> Bool)? = nil
-    ) async throws -> GyroReachReceipt {
-        let clock = ContinuousClock()
-        let limit = clock.now.advanced(by: deadline)
-        while clock.now < limit {
-            if let data = FileManager.default.contents(atPath: receiptURL.path),
-                let value = try? JSONDecoder().decode(GyroReachReceipt.self, from: data),
-                value.schema == 1, value.nonce == nonce, value.sourceSeal == sourceSeal,
-                value.bundleID == bundleID,
-                UUID(uuidString: value.simulatorID) == UUID(uuidString: simulatorID),
-                value.processID > 0,
-                value.foreground, value.keyWindow, value.rootMounted, value.rootFillsScene,
-                Date().timeIntervalSince1970 - value.observedAt <= 10,
-                condition?(value) ?? true
-            {
-                finalSequence = value.sequence
-                return value
-            }
-            try await Task.sleep(for: .milliseconds(200))
-        }
-        throw NSError(
-            domain: "GyroReachReader", code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "Timed out waiting for a receipt"])
-    }
-
-    /// Every negative receipt advances sequence and time after input, with a final fresh
-    /// observation after the full window; stale bridge snapshots cannot prove no change.
-    private func requireUnchanged(
-        since baseline: GyroReachReceipt, window: Duration, what: String
-    ) async throws {
-        let clock = ContinuousClock()
-        let limit = clock.now.advanced(by: window)
-        var previous = baseline
-        while true {
-            let completesWindow = clock.now >= limit
-            let observedAfter = Date().timeIntervalSince1970
-            let current = try await receipt(deadline: .seconds(2)) {
-                $0.sequence > previous.sequence
-                    && $0.observedAt > max(previous.observedAt, observedAfter)
-            }
-            try require(
-                current.outcome == baseline.outcome, "\(what) changed an owner outcome")
-            previous = current
-            if completesWindow { return }
-            try await Task.sleep(for: .milliseconds(200))
-        }
-    }
-
-    private func recordOutcome(tapInvoked: Int, notes: [String]) {
-        let record: [String: Any] = [
-            "nonce": nonce, "sourceSeal": sourceSeal, "bundleID": bundleID,
-            "simulatorID": simulatorID, "tapInvoked": tapInvoked, "notes": notes,
-            "finalSequence": Int(finalSequence),
-        ]
-        guard let data = try? JSONSerialization.data(withJSONObject: record, options: [.sortedKeys])
-        else { return }
-        FileHandle.standardOutput.write(
-            Data("GYRO_NATIVE_INPUT_OUTCOME:\(String(decoding: data, as: UTF8.self))\n".utf8))
     }
 }

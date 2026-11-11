@@ -2,21 +2,24 @@ package com.opencapture.openzcine.media
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.opencapture.openzcine.R
+import com.opencapture.opencine.appkitnative.MonitorBitmapStillLook
+import com.opencapture.opencine.cameracontrols.AssistHost
+import com.opencapture.opencine.cameracontrols.MonitorOperatorAssistSource
 import com.opencapture.opencine.appkit.*
 import com.opencapture.opencine.cameracontrols.MonitorOperatorPhotoScreen
 import com.opencapture.opencine.nikon.NikonMediaClipRecord
 import com.opencapture.opencine.nikon.NikonNative
 import com.opencapture.opencine.nikon.NikonStillPhotoClassification
 import com.opencapture.opencine.nikon.NikonStillPreviewStrategy
+import com.opencapture.openzcine.R
 import com.opencapture.openzcine.bridge.SwiftCore
 import com.opencapture.openzcine.diagnostics.AndroidDiagnosticEvent
 import com.opencapture.openzcine.lstr
+import com.opencapture.openzcine.settings.SettingsPalette
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
@@ -56,7 +59,7 @@ internal fun MediaStillViewer(
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    val io = remember(library, record.asset.id, admission, cacheStore, connectionOwner) {
+    val io = remember(library, record.asset.id, admission, cacheStore, connectionOwner, context) {
         NikonStillPictureIO(cacheStore, cameraTransferAvailable, connectionOwner, onResolvedObjectSize, context)
     }
     val variants = remember(record, rawRecord) {
@@ -121,7 +124,14 @@ internal fun MediaStillViewer(
         loaders = MonitorMediaPictureLoaders(preview = io::preview, cached = io::cached, progressive = io::progressive),
         operations = operations, sourceCurrent = sourceCurrent, variants = variants, rating = rating, sharing = sharing,
         share = onShare?.let { open -> { request -> if (request.isCurrent()) open(request.record) } }, collection = collection, selectRecord = selectRecord, collectionThumbnail = thumbnail,
-        deleted = onDeleted, deletedReturning = onDeletedReturning, close = onClose)
+        deleted = onDeleted, deletedReturning = onDeletedReturning, close = onClose,
+        // The playback page's assist bar: the same tool order store and assist host as clip
+        // playback, and the native still look for peaking, false colour and zebra on the photo.
+        usageStore = remember(context) { MonitorToolUsagePreferences(
+            context.getSharedPreferences("assist", Context.MODE_PRIVATE), "assistToolUsage.v1") },
+        assists = remember { MonitorOperatorAssistSource(
+            AssistHost(SettingsPalette.peaking, SettingsPalette.highlight, SettingsPalette.midtone), null, {}, null) },
+        stillLook = remember { MonitorBitmapStillLook() })
 }
 
 /** Only SDK transfer and native bitmap/EXIF facts live here; the shared owner schedules and joins. */
@@ -141,13 +151,11 @@ private class NikonStillPictureIO(
         val value = request.record.payload
         val bitmap = withContext(Dispatchers.IO) {
             if (!cameraTransferAvailable || !SwiftCore.isAvailable || connectionOwner == null || !request.isCurrent()) null
-            else NikonNative.sessionThumbnail(connectionOwner, value.clip.handle.toInt())?.let { jpeg ->
-                if (!request.isCurrent()) null else {
-                    val key = value.clip.libraryKey(value.bucket)
-                    val orientation = MediaExifOrientation.fromBytes(jpeg)?.also { MediaExifOrientation.learn(key, it) }
-                        ?: MediaExifOrientation.learned(key)
-                    BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size)?.upright(orientation)
-                }
+            else NikonNative.sessionUprightThumbnail(connectionOwner, value.clip.handle.toInt(), value.clip.filename)?.let { jpeg ->
+                if (!request.isCurrent()) null else MonitorBitmapDecoder.decode(
+                    jpeg, MonitorBitmapDecoder.PAGE_EDGE,
+                    fallbackOrientation = MediaExifOrientation.learned(value.clip.libraryKey(value.bucket)),
+                )
             }
         }
         if (!request.isCurrent()) return null
@@ -175,10 +183,8 @@ private class NikonStillPictureIO(
                 if (!request.isCurrent()) MediaTransferPreparation.Cancelled else prepareMediaObjectTransfer(
                     cacheStore = cache, cameraID = value.bucket, clip = value.clip,
                     objectLabel = context?.getString(R.string.media_object_image) ?: "image",
-                    bridge = SwiftCoreMediaObjectTransferBridge(connectionOwner, context),
-                    cameraTransferAvailable = cameraTransferAvailable,
-                    onResolvedSize = { if (request.isCurrent()) onResolvedObjectSize(value.clip, it) },
-                    context = context)
+                    bridge = SwiftCoreMediaObjectTransferBridge(connectionOwner, context), cameraTransferAvailable = cameraTransferAvailable,
+                    onResolvedSize = { if (request.isCurrent()) onResolvedObjectSize(value.clip, it) }, context = context)
             }
         }, stopTransfer = {
             if (cameraTransferAvailable && SwiftCore.isAvailable && connectionOwner != null)
@@ -189,7 +195,7 @@ private class NikonStillPictureIO(
                 is MediaTransferPreparation.Ready -> observe(prepared.entry, classification, publication)
                 is MediaTransferPreparation.Failed -> {
                     publication.publish(StillPreviewStates.transferFailed(prepared.message,
-                        thumbnails[request.record.asset.id] != null, context).pictureStatus())
+                        thumbnails[request.record.asset.id] != null, context).pictureStatus(context))
                     thumbnails[request.record.asset.id]
                 }
                 MediaTransferPreparation.Cancelled, MediaTransferPreparation.Loading -> null
@@ -207,7 +213,7 @@ private class NikonStillPictureIO(
             val bytes = entry.downloadedBytes
             when (entry.state) {
                 MediaCacheState.ACTIVE -> {
-                    publication.publish(StillPreviewStates.downloading(classification, entry.progress, context).pictureStatus())
+                    publication.publish(StillPreviewStates.downloading(classification, entry.progress, context).pictureStatus(context))
                     if (classification.previewStrategy == NikonStillPreviewStrategy.PROGRESSIVE && bytes > 0 &&
                         (lastDecodeBytes < 0 || bytes - lastDecodeBytes >= PROGRESSIVE_DECODE_STEP_BYTES)) {
                         val bitmap = withContext(Dispatchers.IO) { decodeCacheBitmap(entry) }
@@ -222,22 +228,21 @@ private class NikonStillPictureIO(
                     val value = request.record.payload
                     val bitmap = withContext(Dispatchers.IO) {
                         val decoded = decodeCacheBitmap(entry)
-                        if (request.isCurrent()) MediaExifOrientation.fromFile(entry.finalPath)?.let {
+                        if (request.isCurrent()) MonitorBitmapDecoder.exifOrientation(entry.finalPath.toFile())?.let {
                             MediaExifOrientation.learn(value.clip.libraryKey(value.bucket), it)
                         }
                         decoded
                     }
                     if (!publication.isCurrent) return null
-                    publication.publish(if (bitmap != null) StillPreviewUiState.FullPreview.pictureStatus()
-                        else StillPreviewStates.decoderUnavailable(classification, thumbnail != null, context).pictureStatus())
+                    publication.publish(if (bitmap != null) StillPreviewUiState.FullPreview.pictureStatus(context)
+                        else StillPreviewStates.decoderUnavailable(classification, thumbnail != null, context).pictureStatus(context))
                     if (bitmap == null && thumbnail != null) publication.publish(thumbnail)
                     return bitmap ?: thumbnail
                 }
                 MediaCacheState.FAILED, MediaCacheState.CANCELLED -> {
                     publication.publish(StillPreviewStates.transferFailed(
-                        if (entry.state == MediaCacheState.FAILED) lstr(context, R.string.still_preview_transfer_failed)
-                            else lstr(context, R.string.still_preview_transfer_cancelled),
-                        thumbnail != null, context).pictureStatus())
+                        lstr(context, if (entry.state == MediaCacheState.FAILED) R.string.still_preview_transfer_failed else R.string.still_preview_transfer_cancelled),
+                        thumbnail != null, context).pictureStatus(context))
                     if (thumbnail != null) publication.publish(thumbnail)
                     return thumbnail
                 }
@@ -246,8 +251,8 @@ private class NikonStillPictureIO(
         return null
     }
 }
-private fun StillPreviewUiState.pictureStatus(): MonitorMediaPictureStatus = when (this) {
-    StillPreviewUiState.Preparing -> MonitorMediaPictureStatus("Preparing camera thumbnail…", showsRating = false)
+private fun StillPreviewUiState.pictureStatus(context: Context? = null): MonitorMediaPictureStatus = when (this) {
+    StillPreviewUiState.Preparing -> MonitorMediaPictureStatus(lstr(context, R.string.still_preview_preparing), showsRating = false)
     is StillPreviewUiState.Downloading -> MonitorMediaPictureStatus(message, progress, showsRating = false)
     is StillPreviewUiState.ThumbnailFallback -> MonitorMediaPictureStatus(message)
     is StillPreviewUiState.Failed -> MonitorMediaPictureStatus(message)
@@ -260,5 +265,5 @@ private fun decodeCacheBitmap(entry: MediaCacheEntry): Bitmap? =
 
 private fun decodeBitmap(path: Path): Bitmap? {
     if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) return null
-    return MonitorBitmapDecoder.decode(path.toFile(), MonitorBitmapDecoder.PAGE_EDGE)?.upright(MediaExifOrientation.fromFile(path))
+    return MonitorBitmapDecoder.decode(path.toFile(), MonitorBitmapDecoder.PAGE_EDGE)
 }

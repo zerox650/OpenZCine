@@ -2,6 +2,7 @@ package com.opencapture.openzcine.pairing
 
 import com.opencapture.openzcine.R
 import com.opencapture.opencine.nikon.CameraConnectionFailure
+import com.opencapture.opencine.nikon.NikonBodyWake
 import java.nio.file.Path
 import kotlin.io.path.readText
 import org.junit.Assert.assertEquals
@@ -35,6 +36,15 @@ class ConnectionFailureMessagesTest {
             ),
         )
         assertFalse(CameraConnectionFailure.UNREACHABLE.savedProfileUnavailable)
+    }
+
+    /** Hardware pass 2026-10-25 (3.7): a body the wake never heard read "Couldn't reach". */
+    @Test
+    fun `a body the wake never heard gets the shared silent copy iOS shows`() {
+        assertEquals(
+            NikonBodyWake.silentMessage(""),
+            friendlyCameraConnectionFailure(CameraConnectionFailure.CAMERA_SILENT, "anything"),
+        )
     }
 
     @Test

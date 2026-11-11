@@ -633,6 +633,48 @@ final class RunnerTests: XCTestCase {
         XCTAssertEqual(model.assist.zebraHighlightIRE, retained)
     }
 
+    /// A still in the media viewer is a full-range display picture, so its zebra menu reads a
+    /// native code on the still's own 0-255 range, not on the clip's log curve (CodeRabbit,
+    /// OpenZCine#550).
+    @MainActor
+    func testAStillsZebraMenuReadsNativeCodesOnTheStillsOwnRange() async throws {
+        let model = NativeAppModel(assist: .scratch())
+        let originalAssist = model.assistConfiguration
+        let originalLevel = model.assist.zebraHighlightIRE
+        model.assistConfiguration.zebra = .init()
+        model.assistConfiguration.zebra.unit = .native
+        model.assist.zebraHighlightIRE = 50
+        defer {
+            model.assistConfiguration = originalAssist
+            model.assist.zebraHighlightIRE = originalLevel
+        }
+        func shownThreshold(_ menus: NikonAssistMenuAdapter) async throws -> String? {
+            let host = UIHostingController(
+                rootView: NikonZebraNativeFixtureView(model: model, menus: menus))
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            defer {
+                window.isHidden = true
+                window.rootViewController = nil
+            }
+            func fields(_ view: UIView) -> [UITextField] {
+                if let field = view as? UITextField { return [field] }
+                return view.subviews.flatMap(fields)
+            }
+            for _ in 0..<200 {
+                host.view.layoutIfNeeded()
+                await Task.yield()
+            }
+            return try XCTUnwrap(fields(host.view).first).text
+        }
+        let still = try await shownThreshold(.photo(model: model))
+        let clip = try await shownThreshold(
+            NikonAssistMenuAdapter(model: model, compact: true, context: .playback))
+        XCTAssertEqual(still, "128", "Half the still's signal is native code 128 of 255")
+        XCTAssertNotEqual(clip, still, "The clip reads the same level on its log curve")
+    }
+
     @MainActor
     func testActualSharedNikonInspectorUsesAcceptedNativePictureAndRetiresChangedMeaning()
         async throws
@@ -2856,10 +2898,10 @@ extension RunnerTests {
     }
     // MARK: - Hardware JPEG decode
 
-    /// The camera's live view is motion JPEG, and `420v` is what a JPEG already is inside. This
-    /// decoder is the whole reason the super-resolution input needs no colour conversion — so it
-    /// has to actually produce that format, at the right size, with real content in it.
-    func testHardwareJPEGDecodeProducesA420vBufferWithRealPixels() throws {
+    /// The camera's live view is motion JPEG, and full-range 4:2:0 (`420f`) is what a JPEG already
+    /// is inside. The decoder has to actually produce that format, at the right size, with real
+    /// content in it.
+    func testHardwareJPEGDecodeProducesItsPlanarBufferWithRealPixels() throws {
         let image = try XCTUnwrap(UIImage(named: "MockFeed"), "MockFeed asset missing")
         let jpeg = try XCTUnwrap(image.jpegData(compressionQuality: 0.9))
         let header = try XCTUnwrap(
@@ -2868,10 +2910,11 @@ extension RunnerTests {
         let buffer = try XCTUnwrap(
             JPEGPixelBufferDecoder().decode(jpeg), "hardware JPEG decode returned nothing")
 
+        // Full range, as the JPEG is: a video-range buffer of the same samples crushed 16 to 0.
         XCTAssertEqual(
             CVPixelBufferGetPixelFormatType(buffer),
-            JPEGPixelBufferDecoder.pixelFormat,
-            "the decoder must land in the model's own format, not RGB")
+            kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+            "the decoder must land in the JPEG's full-range 4:2:0 planes, not video range or RGB")
         XCTAssertEqual(CVPixelBufferGetWidth(buffer), header.width)
         XCTAssertEqual(CVPixelBufferGetHeight(buffer), header.height)
 
@@ -3607,16 +3650,40 @@ final class NikonSharedStorageReadoutTests: XCTestCase {
         model.shell.control.bind(session)
         defer { model.shell.control.unbind() }
         try await received(storage, model: model)
-        model.prefersMediaDuration = false
-        XCTAssertEqual(model.liveMediaReadout, "480 MB")
-        model.prefersMediaDuration = true
+        XCTAssertEqual(model.liveMediaReadout, "480MB")
+        model.toggleMediaReadout()
+        XCTAssertEqual(model.liveMediaReadout, "48%")
+        model.toggleMediaReadout()
         XCTAssertEqual(model.liveMediaReadout, "~40 Min")
 
         session.reportStorage(.unknown)
         try await received(.unknown, model: model)
-        XCTAssertEqual(model.liveMediaReadout, "-- Min")
-        model.prefersMediaDuration = false
         XCTAssertEqual(model.liveMediaReadout, StorageReadout.unavailable)
+        model.toggleMediaReadout()
+        XCTAssertEqual(model.liveMediaReadout, StorageReadout.unavailable)
+    }
+
+    /// Hardware pass 3.4 (Z + ZR): a tap on the video storage readout steps free space, free
+    /// percentage, then the estimated time, and back, as the shared live surface does in
+    /// Pocket and Insta (`MonitorStorageReadoutFormat.alternatives`). Z skipped the percentage.
+    func testStorageTapStepsFreePercentThenTimeLikeTheSharedSurface() async throws {
+        let volume = StorageVolume(
+            id: "active", freeBytes: .init(595_840_000_000, origin: .cameraReported, at: nil),
+            totalBytes: .init(1_024_000_000_000, origin: .cameraReported, at: nil),
+            remainingRecordingTime: .init(.seconds(51 * 60), origin: .estimated, at: nil))
+        let storage = StorageStatus([volume], origin: .cameraReported, at: nil)
+        let model = NativeAppModel()
+        let session = NikonPictureLifetimeSession(storage: storage)
+        model.shell.control.bind(session)
+        defer { model.shell.control.unbind() }
+        try await received(storage, model: model)
+        var seen: [String] = []
+        for _ in 0..<4 {
+            seen.append(model.liveMediaReadout)
+            model.toggleMediaReadout()
+        }
+        XCTAssertEqual(seen, ["596GB", "58%", "~51 Min", "596GB"])
+        XCTAssertEqual(model.liveMediaReadout, "58%", "one text in every orientation")
     }
 
     func testRelayStorageKeepsHostFormattedObservations() {
@@ -3624,7 +3691,7 @@ final class NikonSharedStorageReadoutTests: XCTestCase {
         model.videoSource = .relay
         model.cameraState = model.cameraState.updating(media: "HOST STORAGE")
         XCTAssertEqual(model.liveMediaReadout, "HOST STORAGE")
-        model.prefersMediaDuration = true
+        model.toggleMediaReadout()
         XCTAssertEqual(model.liveMediaReadout, "HOST STORAGE")
     }
 
@@ -4082,10 +4149,11 @@ private struct NikonSelectionNativeFixture: View {
 @MainActor
 private struct NikonZebraNativeFixtureView: View {
     let model: NativeAppModel
+    var menus: NikonAssistMenuAdapter?
     var body: some View {
         ScrollView {
             MonitorViewAssistSettings(sections: [
-                .zebra(NikonAssistMenuAdapter(model: model, compact: true).zebra)
+                .zebra((menus ?? NikonAssistMenuAdapter(model: model, compact: true)).zebra)
             ])
         }
         .environment(model)
@@ -4327,11 +4395,14 @@ extension RunnerTests {
 
 extension RunnerTests {
     /// Landscape: the expanded View Assist palette's lower row lies over the camera values bar.
-    /// The palette draws above the values (Pocket's layering), so the values never paint over a
-    /// chip or take its tap. Reduce Transparency makes the palette glass opaque, so a covered
-    /// chip's pixels must not change when the values do, while the uncovered values must.
+    /// Owner decision 2026-10-30 (hardware pass A2, OpenCine#303): the palette is only open for a
+    /// moment, so it draws over the values it reaches and leaves them in place. They are neither
+    /// hidden under it (the reversed #251 behavior) nor moved beside it. Every value keeps its
+    /// frame while the palette is open, no value paints over the palette (Reduce Transparency
+    /// makes the glass opaque, so a covered chip's pixels must not change when the values do), and
+    /// collapsing the palette leaves the values where they were.
     @MainActor
-    func testExpandedLandscapePaletteDrawsAboveTheCameraValues() async throws {
+    func testExpandedLandscapePaletteOverlapsTheCameraValuesInPlace() async throws {
         let model = NativeAppModel()
         model.preferences = OperatorPreferences.defaults
         model.startDemoSession()
@@ -4401,24 +4472,50 @@ extension RunnerTests {
         }
 
         try await settle()
+        func values() -> [NSObject] {
+            elements(host.view).filter { identifier($0).hasPrefix("monitor.capture.") }
+        }
+        // Each value's identifier and frame, sorted so the accessibility order does not matter.
+        func placements() -> [(id: String, frame: CGRect)] {
+            values().map { (id: identifier($0), frame: $0.accessibilityFrame) }.sorted {
+                ($0.id, $0.frame.minX, $0.frame.minY) < ($1.id, $1.frame.minX, $1.frame.minY)
+            }
+        }
+        func assertInPlace(
+            _ expected: [(id: String, frame: CGRect)], _ message: String,
+            line: UInt = #line
+        ) {
+            let actual = placements()
+            XCTAssertEqual(actual.map(\.id), expected.map(\.id), message, line: line)
+            for (now, before) in zip(actual, expected) {
+                let moved =
+                    abs(now.frame.minX - before.frame.minX) > 1
+                    || abs(now.frame.minY - before.frame.minY) > 1
+                    || abs(now.frame.width - before.frame.width) > 1
+                    || abs(now.frame.height - before.frame.height) > 1
+                XCTAssertFalse(
+                    moved,
+                    "\(message): \(now.id) moved from \(NSCoder.string(for: before.frame)) "
+                        + "to \(NSCoder.string(for: now.frame))", line: line)
+            }
+        }
+        let closed = placements()
+        let bar = closed.map(\.frame).reduce(CGRect.null) { $0.union($1) }
+        XCTAssertFalse(bar.isNull, "The collapsed palette leaves the camera values shown")
         let expand = try XCTUnwrap(
             elements(host.view).first { identifier($0) == "monitor.assists.expand" },
             "Exposed: \(elements(host.view).map(identifier).filter { !$0.isEmpty })")
         XCTAssertTrue(expand.accessibilityActivate())
         try await settle()
-        let bar = elements(host.view).filter { identifier($0).hasPrefix("monitor.capture.") }
-            .map(\.accessibilityFrame).reduce(CGRect.null) { $0.union($1) }
         let covered = elements(host.view).filter { identifier($0).hasPrefix("monitor.assist.") }
             .map { $0.accessibilityFrame.intersection(bar) }
             .filter { !$0.isNull && $0.width >= 8 && $0.height >= 8 }
         XCTAssertFalse(covered.isEmpty, "The open landscape palette must reach the values bar")
-        let palette = elements(host.view).filter { identifier($0).hasPrefix("monitor.assist") }
-            .map(\.accessibilityFrame).reduce(CGRect.null) { $0.union($1) }
-        let open = CGRect(
-            x: palette.maxX + 8, y: bar.minY, width: bar.maxX - palette.maxX - 8,
-            height: bar.height)
+        assertInPlace(
+            closed,
+            "The open palette draws over the camera values and leaves every one shown in place")
         // Copy the regions now: a renderer image read after a later render showed the later frame.
-        let regions = [open] + covered
+        let regions = covered
         let first = try XCTUnwrap(render())
         let shown = regions.map { pixels(first, $0) }
 
@@ -4447,12 +4544,23 @@ extension RunnerTests {
             }.count
         }
         func noise(_ rect: CGRect) -> Int { Int(rect.integral.width * rect.integral.height) / 100 }
-        XCTAssertGreaterThan(differing(0), noise(open), "The uncovered camera values must redraw")
         for (index, rect) in covered.enumerated() {
             XCTAssertLessThanOrEqual(
-                differing(index + 1), noise(rect),
+                differing(index), noise(rect),
                 "A camera value drew over the open palette at \(NSCoder.string(for: rect))")
         }
+
+        // Back to the original readings, so the collapsed values compare with where they began.
+        model.cameraState = state
+        try await settle()
+        assertInPlace(closed, "The open palette leaves the original values in place")
+        let collapse = try XCTUnwrap(
+            elements(host.view).first {
+                ["monitor.assists.expand", "monitor.assists.collapse"].contains(identifier($0))
+            })
+        XCTAssertTrue(collapse.accessibilityActivate())
+        try await settle()
+        assertInPlace(closed, "Collapsing the palette leaves the camera values where they were")
     }
 }
 
@@ -4683,6 +4791,150 @@ final class SharedLUTPickerCompatibilityTests: XCTestCase {
             attachment.lifetime = .keepAlways
             add(attachment)
         }
+    }
+
+    /// The owner's report (TestFlight 317): Download from RED in the clip player showed nothing
+    /// until the clip closed. The root cover cannot present over the player's own cover; the
+    /// player's mount presents at once. SIMULATED stand-ins for the player and download screen.
+    func testRedDownloadRequestedInPlaybackPresentsOverThePlayer() async throws {
+        let model = NativeAppModel()
+        defer { model.redDownloadHost = nil }
+        // As in the app: the root mount sits on the root container and the player is a cover
+        // presented by a view inside it (the media browser), from the same root controller.
+        let hosted = try Hosted(
+            ZStack {
+                SimulatedMediaBrowser(model: model)
+            }
+            .redDownloadCover(model, host: .root) { Text("SIMULATED root RED download") }
+        )
+        defer { hosted.close() }
+        func presentedDepth() -> Int {
+            var depth = 0
+            var top: UIViewController? = hosted.host
+            while let next = top?.presentedViewController, !next.isBeingDismissed {
+                depth += 1
+                top = next
+            }
+            return depth
+        }
+        func settle(until done: () -> Bool) async throws {
+            for _ in 0..<150 where !done() {
+                hosted.host.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(20))
+            }
+        }
+        try await settle { presentedDepth() == 1 }
+        XCTAssertEqual(presentedDepth(), 1, "The SIMULATED player cover is up")
+
+        // Before the fix every picker asked the root: held behind the player, nothing shows.
+        model.isRedDownloadPresented = true
+        XCTAssertEqual(model.redDownloadHost, .root)
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertEqual(presentedDepth(), 1, "UIKit holds the root's cover behind the player")
+        XCTAssertFalse(hosted.labels.contains("SIMULATED root RED download"))
+        model.redDownloadHost = nil
+
+        // The playback picker asks the player, which presents over the clip at once.
+        model.redDownloadHost = .playback
+        try await settle { hosted.labels.contains("SIMULATED player RED download") }
+        XCTAssertEqual(presentedDepth(), 2)
+        XCTAssertTrue(
+            hosted.labels.contains("SIMULATED player RED download"),
+            hosted.labels.joined(separator: ", "))
+        XCTAssertTrue(model.isRedDownloadPresented)
+
+        // Closing clears only the player's request; the player stays.
+        model.redDownloadHost = nil
+        try await settle { presentedDepth() == 1 }
+        XCTAssertEqual(presentedDepth(), 1)
+        XCTAssertNil(model.redDownloadHost)
+
+        // Asking again while the closing cover is still leaving: its late disappearance must not
+        // clear the newer ask.
+        model.redDownloadHost = .playback
+        try await settle { presentedDepth() == 2 }
+        model.redDownloadHost = nil
+        hosted.host.view.layoutIfNeeded()
+        model.redDownloadHost = .playback
+        try await Task.sleep(for: .milliseconds(1_200))
+        try await settle { presentedDepth() == 2 }
+        XCTAssertEqual(model.redDownloadHost, .playback)
+        XCTAssertEqual(presentedDepth(), 2)
+
+        // The screen closing itself (`dismiss`, the binding's false write) and an immediate new
+        // ask: the dismissal clears only the request it closed.
+        let close = try XCTUnwrap(
+            HostedAccessibility.elements(in: hosted.window).first {
+                $0.accessibilityLabel == "SIMULATED close"
+            }, hosted.labels.joined(separator: ", "))
+        XCTAssertTrue(close.accessibilityActivate())
+        model.redDownloadHost = .playback
+        try await Task.sleep(for: .milliseconds(1_200))
+        try await settle { presentedDepth() == 2 }
+        XCTAssertEqual(model.redDownloadHost, .playback)
+        XCTAssertEqual(presentedDepth(), 2)
+    }
+
+    /// A SIMULATED media browser presenting a SIMULATED clip player cover with its own mount.
+    private struct SimulatedMediaBrowser: View {
+        let model: NativeAppModel
+        @State private var playing = false
+        var body: some View {
+            Color.black
+                .onAppear { playing = true }
+                .fullScreenCover(isPresented: $playing) {
+                    Color.gray
+                        .redDownloadCover(model, host: .playback) {
+                            SimulatedRedDownload(title: "SIMULATED player RED download")
+                        }
+                }
+        }
+    }
+
+    /// A SIMULATED download screen that closes itself the way the real one does (`dismiss`).
+    private struct SimulatedRedDownload: View {
+        let title: String
+        @Environment(\.dismiss) private var dismiss
+        var body: some View {
+            VStack {
+                Text(title)
+                Button("SIMULATED close") { dismiss() }
+            }
+        }
+    }
+
+    /// The playback picker's Download from RED asks the player's mount, not the root.
+    func testPlaybackPickerAsksThePlayerForTheRedDownload() async throws {
+        // An empty RED library of its own: the app's Documents may hold RED looks.
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("red-picker-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = NativeAppModel(lutFileStore: CustomLUTStore(root: root))
+        let previous = model.assistConfiguration.selectedLUT
+        // A RED look that is not stored opens the picker on the empty RED tab.
+        model.assistConfiguration.selectedLUT = .stored(category: .red, fileName: "SIMULATED.cube")
+        defer {
+            model.redDownloadHost = nil
+            model.assistConfiguration.selectedLUT = previous
+        }
+        let hosted = try Hosted(NikonLUTPicker(downloadHost: .playback).environment(model))
+        defer { hosted.close() }
+        func element(_ label: String) -> NSObject? {
+            let matches = HostedAccessibility.elements(in: hosted.host.view).filter {
+                $0.accessibilityLabel == label
+            }
+            return matches.first { $0.accessibilityTraits.contains(.button) } ?? matches.first
+        }
+        for _ in 0..<150 where element("Download from RED") == nil {
+            hosted.host.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let download = try XCTUnwrap(
+            element("Download from RED"),
+            "SIMULATED: no RED looks are stored, so the empty RED tab offers the download. "
+                + hosted.labels.joined(separator: ", "))
+        XCTAssertTrue(download.accessibilityActivate())
+        XCTAssertEqual(model.redDownloadHost, .playback)
     }
 
     func testProductionPickerDelegatesComparisonToInspectorAndDeclaresExposureUnavailable()

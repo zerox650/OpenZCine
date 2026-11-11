@@ -1,5 +1,5 @@
-- Shared OpenCine setup (Add setup included), monitor, View Assist and media controls.
-- Fixes a freeze while the live picture rebuilds after rotating or returning.
-- A dozing camera is woken and dialled again instead of failing as unreachable.
-- Faster RAW/JPEG instant review; tap once in CL/CH for one photo, hold for a burst.
-- Photo LUT, stills-card counts, focus, GYRO and Media sharing fixes; better dropout diagnostics.
+- Shared setup, DISP 3 with REC chip and large timecode; experimental gyro logs add guided calibration and mount-move warnings.
+- Faster Media: staggered grid with upright portrait photos, live transfer speed, Exit selection, zoom to the screen edge.
+- Landscape Photo puts setup values in the top corner.
+- Smoother live view, camera wake and Take Over.
+- Sharper instant review, one photo per CL/CH tap, Photo turns LUTs off, plus shots and sharing fixes.

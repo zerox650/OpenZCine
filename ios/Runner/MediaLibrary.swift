@@ -1,4 +1,5 @@
 import Foundation
+import MonitorPresentation
 import OpenCineAppKit
 import OpenCineMedia
 import OpenZCineCore
@@ -9,6 +10,79 @@ import class OpenCineCameraVocabulary.CustomLUTStore
 /// Media library diagnostics (Media page cache). Filter Console for subsystem `OpenZCine`, category
 /// `media-store`.
 let mediaLibraryLogger = Logger(subsystem: "OpenZCine", category: "media-store")
+
+/// A file's identity, size and modification time from one `stat(2)` call.
+/// `FileManager.attributesOfItem` also reads every extended attribute (getattrlist, lstat,
+/// listxattr, getxattr per call), and playback reads these facts several times a second: build
+/// 317 spent most of its remaining main-thread file time there.
+enum MediaFileFacts {
+    struct Facts: Equatable, Sendable {
+        let fileNumber: UInt64
+        let size: UInt64
+        let modified: Date
+    }
+
+    /// `followingLinks: false` describes a final symbolic link itself, as `attributesOfItem` does.
+    static func read(_ path: String, followingLinks: Bool) -> Facts? {
+        var info = stat()
+        let status = followingLinks ? stat(path, &info) : lstat(path, &info)
+        guard status == 0 else { return nil }
+        let time = info.st_mtimespec
+        return .init(
+            fileNumber: UInt64(info.st_ino), size: UInt64(max(0, info.st_size)),
+            modified: Date(
+                timeIntervalSince1970: TimeInterval(time.tv_sec) + TimeInterval(time.tv_nsec) / 1e9)
+        )
+    }
+}
+
+/// Operation counts for the large-card performance tests (Debug only): each counted call is a
+/// whole-catalog cost, so a test can prove an operation's cost follows its own size. Counts land
+/// in the task-local scope a test installs, so concurrently running tests never mix.
+enum MediaPerformanceProbe {
+    enum Counter: Hashable, Sendable {
+        case indexDecode, directoryListing, recordMapping, projectionPass, fileStamp
+        /// Microseconds spent in the codec's per-page work (captureCatalog, prepareCatalog,
+        /// encodeForPersistence), so a test can split app time from shared-library time.
+        case captureMicros, prepareMicros, persistMicros
+    }
+    #if DEBUG
+        final class Scope: @unchecked Sendable {
+            private let lock = NSLock()
+            private var counts: [Counter: Int] = [:]
+            init() {}
+            func add(_ counter: Counter, _ amount: Int = 1) {
+                lock.lock()
+                counts[counter, default: 0] += amount
+                lock.unlock()
+            }
+            subscript(_ counter: Counter) -> Int {
+                lock.lock()
+                defer { lock.unlock() }
+                return counts[counter, default: 0]
+            }
+        }
+        @TaskLocal static var scope: Scope?
+        static func count(_ counter: Counter) { scope?.add(counter) }
+        static func timed<T>(_ counter: Counter, _ work: () throws -> T) rethrows -> T {
+            guard let scope else { return try work() }
+            let start = ContinuousClock.now
+            defer {
+                let elapsed = ContinuousClock.now - start
+                scope.add(
+                    counter,
+                    Int(elapsed.components.seconds) * 1_000_000
+                        + Int(elapsed.components.attoseconds / 1_000_000_000_000))
+            }
+            return try work()
+        }
+    #else
+        @inline(__always) static func count(_ counter: Counter) {}
+        @inline(__always) static func timed<T>(_ counter: Counter, _ work: () throws -> T)
+            rethrows -> T
+        { try work() }
+    #endif
+}
 
 /// Reserved Frame.io upload state for a clip (the Frame.io button is a placeholder for now — see
 /// `MediaPlayerView`). Persisted so a future upload flow can resume/show status.
@@ -53,9 +127,9 @@ struct MediaClip: Codable, Equatable, Identifiable, Sendable {
     /// On-card R3D filename paired with this proxy by stem (nil when unlinked).
     var linkedR3DFilename: String? = nil
     var isFavorite: Bool = false
-    /// EXIF orientation (1–8) of the full still, learned from the full file's header — the
-    /// camera's PTP thumbnails can be EXIF-stripped, so grid/filmstrip decodes use this as the
-    /// fallback to show portrait shots upright. Additive/Codable — nil until resolved.
+    /// EXIF orientation (1–8) of the full still, learned from the full file's header. Camera
+    /// thumbnails arrive tagged with it already; grid/filmstrip decodes use this as the fallback
+    /// for a thumbnail that carries none. Additive/Codable — nil until resolved.
     var exifOrientation: Int? = nil
     /// Cached camera star rating (0–5), mirrored from the body on every rating write so the
     /// Favorites filter agrees with the shots starred during a shoot. Additive/Codable —
@@ -169,6 +243,14 @@ extension MediaClip {
     /// during the shoot lands under the Favorites tab without a per-cell camera round-trip.
     var isFavorited: Bool {
         isFavorite || (starRating ?? 0) >= 1
+    }
+
+    /// Width over height as the grid shows it: the listed pixel size, turned for a still whose
+    /// orientation the row has learned (from its tagged thumbnail or its full file).
+    var uprightAspectRatio: Double? {
+        MonitorMediaMasonry.uprightAspect(
+            width: pixelWidth.map(Int.init), height: pixelHeight.map(Int.init),
+            exifOrientation: exifOrientation)
     }
 
     /// This clip as a burst-detection frame: capture identity plus a format/dimensions signature
@@ -308,12 +390,25 @@ struct MediaClipStore: @unchecked Sendable {
 
     /// Every bucket directory currently on disk (camera serials + `local`).
     func allBucketIDs() -> [String] {
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
-        return names.filter { name in
+        bucketIDs(named: (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? [])
+    }
+
+    private func bucketIDs(named names: [String]) -> [String] {
+        names.filter { name in
             var isDirectory: ObjCBool = false
             let path = root.appendingPathComponent(name).path
             return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
                 && isDirectory.boolValue
+        }
+    }
+
+    /// A directory's names for a pass that must see everything: an absent directory holds
+    /// nothing, while one that exists but cannot be listed is unknown (nil), never empty.
+    private func checkedListing(of directory: URL) -> [String]? {
+        do {
+            return try fileManager.contentsOfDirectory(atPath: directory.path)
+        } catch {
+            return fileManager.fileExists(atPath: directory.path) ? nil : []
         }
     }
 
@@ -354,6 +449,57 @@ struct MediaClipStore: @unchecked Sendable {
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: url, options: .atomic)
     }
+
+    /// Camera thumbnails cached before thumbnails carried their still's orientation draw
+    /// portrait stills sideways. Once per library, removes the cached thumbnail of every camera
+    /// still whose rows have not learned its orientation (a learned row still turns its old
+    /// thumbnail upright, and a RAW and JPEG of one stem share a thumbnail), so the grid fetches it again through the orientation-tagging read.
+    /// The library is marked done only after a complete pass: a folder that cannot be listed, a
+    /// bucket whose index cannot be read or a thumbnail that could not be removed is tried again
+    /// on the next launch.
+    func retireUnorientedStillThumbnails() {
+        let marker = root.appendingPathComponent(Self.orientedThumbnailsMarker)
+        guard !fileManager.fileExists(atPath: marker.path) else { return }
+        guard let rootNames = checkedListing(of: root) else { return }
+        var complete = true
+        for bucket in bucketIDs(named: rootNames) where bucket != Self.localBucketID {
+            let indexed: [MediaClip]
+            do {
+                indexed = try observedIndex(cameraID: bucket)
+            } catch {
+                complete = false
+                continue
+            }
+            guard let names = checkedListing(of: directory(for: bucket)) else {
+                complete = false
+                continue
+            }
+            // Same-stem stills (a RAW and its JPEG) are separate rows that share one cached
+            // thumbnail, so a thumbnail is kept while any row using it has learned its orientation.
+            var thumbnailIsOriented: [URL: Bool] = [:]
+            for clip in reconciledRows(cameraID: bucket, indexed: indexed, diskNames: names).values
+            where clip.mediaKind == .photo {
+                guard let thumb = try? thumbURL(cameraID: bucket, filename: clip.filename),
+                    fileManager.fileExists(atPath: thumb.path)
+                else { continue }
+                thumbnailIsOriented[thumb, default: false] =
+                    thumbnailIsOriented[thumb, default: false] || clip.exifOrientation != nil
+            }
+            for (thumb, oriented) in thumbnailIsOriented where !oriented {
+                do {
+                    try fileManager.removeItem(at: thumb)
+                } catch {
+                    if fileManager.fileExists(atPath: thumb.path) { complete = false }
+                }
+            }
+        }
+        guard complete else { return }
+        try? fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = fileManager.createFile(atPath: marker.path, contents: Data())
+    }
+
+    /// Present once a library's cached thumbnails all carry their still's orientation.
+    static let orientedThumbnailsMarker = ".thumbnails-oriented-v1"
 
     func isDownloaded(cameraID: String, filename: String) -> Bool {
         guard let url = try? localURL(cameraID: cameraID, filename: filename) else { return false }
@@ -411,15 +557,65 @@ struct MediaClipStore: @unchecked Sendable {
     /// container — e.g. a simulator sample — shows up); index entries are kept even when not yet
     /// downloaded (camera clips awaiting fetch). Sorted by filename.
     func list(cameraID: String) -> [MediaClip] {
+        let listing = reconciledListing(cameraID: cameraID)
+        if let sorted = listing.sorted { return sorted }
+        MediaPerformanceProbe.count(.directoryListing)
+        let sorted = listing.byName.values.sorted {
+            $0.filename.localizedCaseInsensitiveCompare($1.filename) == .orderedAscending
+        }
+        MediaClipIndexMemo.shared.storeSorted(
+            sorted, at: directory(for: cameraID).path, stamp: listing.stamp)
+        return sorted
+    }
+
+    /// `list(cameraID:)` keyed by filename, without its localized sort (catalog preparation and
+    /// action checks only look rows up).
+    func listByName(cameraID: String) -> [String: MediaClip] {
+        reconciledListing(cameraID: cameraID).byName
+    }
+
+    private func reconciledListing(cameraID: String) -> MediaClipIndexMemo.Listing {
+        let dir = directory(for: cameraID)
+        let stamp = indexStamp(cameraID: cameraID)
+        if let cached = MediaClipIndexMemo.shared.listing(at: dir.path, stamp: stamp),
+            cached.unindexed.allSatisfy({
+                fileSize(at: dir.appendingPathComponent($0.key)) == $0.value
+            })
+        {
+            return cached
+        }
         let indexed = loadIndex(cameraID: cameraID)
-        let names =
-            (try? FileManager.default.contentsOfDirectory(atPath: directory(for: cameraID).path))
-            ?? []
-        return reconciledClips(cameraID: cameraID, indexed: indexed, diskNames: names)
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        let byName = reconciledRows(cameraID: cameraID, indexed: indexed, diskNames: names)
+        let indexedNames = Set(indexed.map(\.filename))
+        var unindexed: [String: UInt64] = [:]
+        for clip in byName.values where !indexedNames.contains(clip.filename) {
+            unindexed[clip.filename] = clip.sizeBytes
+        }
+        let listing = MediaClipIndexMemo.Listing(
+            stamp: stamp, unindexed: unindexed, byName: byName, sorted: nil)
+        MediaClipIndexMemo.shared.storeListing(listing, at: dir.path)
+        return listing
+    }
+
+    /// Identity of this bucket's listing inputs: the index file and the bucket directory entries.
+    /// Equal stamps mean `list(cameraID:)` would read the same index and the same file names.
+    func indexStamp(cameraID: String) -> MediaClipIndexStamp {
+        .init(
+            index: MediaClipIndexMemo.fileStamp(indexURL(cameraID: cameraID).path),
+            directory: MediaClipIndexMemo.fileStamp(directory(for: cameraID).path))
     }
 
     private func reconciledClips(cameraID: String, indexed: [MediaClip], diskNames: [String])
         -> [MediaClip]
+    {
+        reconciledRows(cameraID: cameraID, indexed: indexed, diskNames: diskNames).values.sorted {
+            $0.filename.localizedCaseInsensitiveCompare($1.filename) == .orderedAscending
+        }
+    }
+
+    private func reconciledRows(cameraID: String, indexed: [MediaClip], diskNames: [String])
+        -> [String: MediaClip]
     {
         var byName: [String: MediaClip] = [:]
         for clip in indexed { byName[clip.filename] = clip }
@@ -431,9 +627,7 @@ struct MediaClipStore: @unchecked Sendable {
                 cameraID: cameraID, filename: name, handle: nil, storageID: nil,
                 sizeBytes: size, captureDate: "")
         }
-        return byName.values.sorted {
-            $0.filename.localizedCaseInsensitiveCompare($1.filename) == .orderedAscending
-        }
+        return byName
     }
 
     private func fileSize(at url: URL) -> UInt64 {
@@ -705,23 +899,39 @@ struct MediaClipStore: @unchecked Sendable {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         guard ifCurrent() else { throw MediaServiceError.retired }
         try bytes.write(to: indexURL(cameraID: cameraID), options: .atomic)
+        MediaClipIndexMemo.shared.invalidate(directory: dir.path)
     }
 
     static func decodeCatalogBytes(_ bytes: Data) throws -> [MediaClip] {
-        try JSONDecoder().decode([MediaClip].self, from: bytes).filter {
+        if let decoded = MediaClipIndexMemo.shared.decoded(bytes) { return decoded }
+        MediaPerformanceProbe.count(.indexDecode)
+        let clips = try JSONDecoder().decode([MediaClip].self, from: bytes).filter {
             MediaClipFilename.safeCameraBasename($0.filename) != nil
         }
+        MediaClipIndexMemo.shared.rememberDecoded(clips, for: bytes)
+        return clips
     }
 
     static func encodeCatalogBytes(_ clips: [MediaClip]) throws -> Data {
-        try JSONEncoder().encode(clips)
+        let bytes = try JSONEncoder().encode(clips)
+        // MediaClip's Codable form round-trips exactly, so the next read of these bytes (the
+        // following checkpoint's current index) needs no decode.
+        MediaClipIndexMemo.shared.rememberDecoded(
+            clips.filter { MediaClipFilename.safeCameraBasename($0.filename) != nil }, for: bytes)
+        return bytes
     }
 
     private func loadIndex(cameraID: String) -> [MediaClip] {
-        guard let data = try? Data(contentsOf: indexURL(cameraID: cameraID)),
-            let clips = try? JSONDecoder().decode([MediaClip].self, from: data)
-        else { return [] }
-        return clips.filter { MediaClipFilename.safeCameraBasename($0.filename) != nil }
+        let url = indexURL(cameraID: cameraID)
+        // The stamp is read before the bytes: a replacement in between only costs a later decode.
+        guard let stamp = MediaClipIndexMemo.fileStamp(url.path) else { return [] }
+        if let cached = MediaClipIndexMemo.shared.index(at: url.path, stamp: stamp) {
+            return cached
+        }
+        guard let data = try? Data(contentsOf: url) else { return [] }
+        guard let clips = try? Self.decodeCatalogBytes(data) else { return [] }
+        MediaClipIndexMemo.shared.storeIndex(clips, at: url.path, stamp: stamp)
+        return clips
     }
 
     /// Settings observes the same catalog as listing, but an unreadable or malformed index is unknown.
@@ -744,12 +954,13 @@ struct MediaClipStore: @unchecked Sendable {
     private func saveIndex(_ clips: [MediaClip], cameraID: String) {
         let dir = directory(for: cameraID)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        guard let data = try? JSONEncoder().encode(clips) else {
+        guard let data = try? Self.encodeCatalogBytes(clips) else {
             mediaLibraryLogger.error(
                 "failed to encode media index for \(cameraID, privacy: .private(mask: .hash))")
             return
         }
         try? data.write(to: indexURL(cameraID: cameraID), options: .atomic)
+        MediaClipIndexMemo.shared.invalidate(directory: dir.path)
     }
 
     /// Applies delta-sync removals: drops camera-only index rows whose handles disappeared, and
@@ -843,5 +1054,96 @@ struct MediaClipStore: @unchecked Sendable {
             onProgress(cursor.offset)
         }
         return cursor.offset
+    }
+}
+
+/// Listing inputs of one bucket; see `MediaClipStore.indexStamp(cameraID:)`.
+struct MediaClipIndexStamp: Equatable, Sendable {
+    let index: MediaClipIndexMemo.FileStamp?
+    let directory: MediaClipIndexMemo.FileStamp?
+}
+
+/// Process-wide memo of decoded `index.json` files and reconciled bucket listings. Every read
+/// validates against the file system (file number, size and modification date of the index and
+/// of the bucket directory), so a write by any store, process or test is always seen; the store's
+/// own writes also drop the entry. A 3,200-row index costs a JSON decode, a directory listing and
+/// a localized sort per read, and the gallery, listing, playback and delivery checks read it far
+/// more often than it changes (owner report 2026-10-25, build 304).
+final class MediaClipIndexMemo: @unchecked Sendable {
+    struct FileStamp: Equatable, Sendable {
+        let fileNumber: UInt64
+        let size: UInt64
+        let modified: Date
+    }
+    struct Listing {
+        let stamp: MediaClipIndexStamp
+        let unindexed: [String: UInt64]
+        let byName: [String: MediaClip]
+        var sorted: [MediaClip]?
+    }
+    static let shared = MediaClipIndexMemo()
+    private let lock = NSLock()
+    private var indexes: [String: (stamp: FileStamp, clips: [MediaClip])] = [:]
+    private var listings: [String: Listing] = [:]
+    private var recentDecodes: [(bytes: Data, clips: [MediaClip])] = []
+    private var writes: UInt64 = 0
+    /// Advances with every write this process makes to an index (each drops its memo entry).
+    var writeGeneration: UInt64 {
+        lock.lock()
+        defer { lock.unlock() }
+        return writes
+    }
+
+    static func fileStamp(_ path: String) -> FileStamp? {
+        MediaPerformanceProbe.count(.fileStamp)
+        guard let facts = MediaFileFacts.read(path, followingLinks: false) else { return nil }
+        return .init(fileNumber: facts.fileNumber, size: facts.size, modified: facts.modified)
+    }
+    func index(at path: String, stamp: FileStamp) -> [MediaClip]? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let entry = indexes[path], entry.stamp == stamp else { return nil }
+        return entry.clips
+    }
+    func storeIndex(_ clips: [MediaClip], at path: String, stamp: FileStamp) {
+        lock.lock()
+        indexes[path] = (stamp, clips)
+        lock.unlock()
+    }
+    func listing(at directory: String, stamp: MediaClipIndexStamp) -> Listing? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let entry = listings[directory], entry.stamp == stamp else { return nil }
+        return entry
+    }
+    func storeListing(_ listing: Listing, at directory: String) {
+        lock.lock()
+        listings[directory] = listing
+        lock.unlock()
+    }
+    func storeSorted(_ sorted: [MediaClip], at directory: String, stamp: MediaClipIndexStamp) {
+        lock.lock()
+        if listings[directory]?.stamp == stamp { listings[directory]?.sorted = sorted }
+        lock.unlock()
+    }
+    func invalidate(directory: String) {
+        lock.lock()
+        writes &+= 1
+        listings[directory] = nil
+        indexes = indexes.filter { !$0.key.hasPrefix(directory + "/") }
+        lock.unlock()
+    }
+    /// The last few exact byte strings this process encoded or decoded.
+    func decoded(_ bytes: Data) -> [MediaClip]? {
+        lock.lock()
+        defer { lock.unlock() }
+        return recentDecodes.first { $0.bytes == bytes }?.clips
+    }
+    func rememberDecoded(_ clips: [MediaClip], for bytes: Data) {
+        lock.lock()
+        recentDecodes.removeAll { $0.bytes == bytes }
+        recentDecodes.insert((bytes, clips), at: 0)
+        if recentDecodes.count > 4 { recentDecodes.removeLast(recentDecodes.count - 4) }
+        lock.unlock()
     }
 }

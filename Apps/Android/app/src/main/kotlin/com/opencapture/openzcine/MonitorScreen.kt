@@ -1,19 +1,18 @@
 package com.opencapture.openzcine
 
+import android.content.Context
 import com.opencapture.opencine.nikon.codecColorChoices
-import com.opencapture.opencine.media.recordingTimeLabel
-import com.opencapture.opencine.media.storageReadout
-import com.opencapture.opencine.media.StorageReadout
+import com.opencapture.opencine.media.StorageReadoutCycle
 import com.opencapture.opencine.nikon.LiveFocusInfo
 import com.opencapture.opencine.nikon.MonitorTextFormat
 import java.util.concurrent.atomic.AtomicReference
-import com.opencapture.openzcine.gyro.GyroCaptureState
-import com.opencapture.openzcine.gyro.GyroStatusPill
+import com.opencapture.opencine.gyro.GyroCaptureState
+import com.opencapture.opencine.gyro.GyroPillKind
+import com.opencapture.opencine.cameracontrols.gyro.GyroPillChip
 
 import com.opencapture.monitorui.MonitorIcon
 import com.opencapture.opencine.cameracontrols.*
 import android.os.Build
-import android.content.Context
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
@@ -342,7 +341,7 @@ internal fun MonitorScreen(
     val cameraProperties by session.cameraProperties.collectAsState()
     // Real press-tracked still release over the session (single, bulb/time,
     // and hold-to-burst with the remote-mode bracket). [verify-on-HW]
-    val stillCapture = remember(session) { StillCaptureController(session, context = appContext) }
+    val stillCapture = remember(session) { StillCaptureController(session) }
     val stillCapturing by stillCapture.isCapturing.collectAsState()
     // Post-capture instant playback (PLAY view-assist tool).
     val instantReview = remember(session) { InstantReviewController(session) }
@@ -593,12 +592,9 @@ internal fun MonitorScreen(
                     cameraPropertyConfirmsSelection(session.cameraProperties.value, control, label)
             },
             refused = { selection, error ->
-                // The typed control failures own operator copy; a lens or session error keeps its
-                // own words, which are already written for the operator.
-                val detail = (error as? CameraControlException)?.let { controlFailureMessage(it, appContext) }
-                    ?: error.message ?: appContext.getString(R.string.control_change_rejected)
                 commandControlFeedback = CommandControlFeedback(
-                    appContext.getString(R.string.control_error, selection.request.title, detail),
+                    appContext.getString(R.string.control_error, selection.request.title,
+                        error.message ?: appContext.getString(R.string.control_change_rejected)),
                     isError = true,
                 )
             },
@@ -651,7 +647,6 @@ internal fun MonitorScreen(
                 shutterLockedOnCamera = effectiveShutterLocked,
                 isoAuto = cameraProperties.isoAuto,
                 exposureMode = cameraProperties.exposureMode,
-                context = appContext,
             ).let { settings ->
                 // A watcher's strip shows the broadcaster's values (iOS `applyRelayState`);
                 // no local session ever fills these cells.
@@ -686,13 +681,12 @@ internal fun MonitorScreen(
                             .firstOrNull { it.kind == MonitorPickerKind.WHITE_BALANCE }
                             ?.picker,
                     photoTimerDelaySeconds = photoTimerDelaySeconds,
-                    context = appContext,
                 )
             }
         }
     val photographyTopPickers =
         remember(cameraProperties, isPhotographyMode) {
-            if (isPhotographyMode) photographyTopBarPickers(cameraProperties, context = appContext) else emptyMap()
+            if (isPhotographyMode) photographyTopBarPickers(cameraProperties) else emptyMap()
         }
     val activeMonitorPicker =
         if (isPhotographyMode) {
@@ -1032,7 +1026,7 @@ internal fun MonitorScreen(
                         recordConfirmationPending = recordConfirmationOpen,
                         cameraControlPending = pendingCommandControl != null,
                     )
-                executeWearRecordCommand(safety, recording, context = appContext) { target ->
+                executeWearRecordCommand(safety, recording) { target ->
                     if (source !== session || !admission.admits(source)) throw CameraRecordingException.CommandRejected
                     val snapshot = commonSession.refresh()
                     val dispatch = com.opencapture.opencine.core.CommandDispatchAdmission(
@@ -1094,7 +1088,7 @@ internal fun MonitorScreen(
                             recordControlEnabled = recordControlEnabled,
                         )
                     } catch (error: CameraRecordingException) {
-                        commonControl.onNote(recordingFailureMessage(error, appContext))
+                        error.message?.let(commonControl.onNote)
                     }
                 }
             },
@@ -1316,15 +1310,6 @@ internal fun MonitorScreen(
                 !isVerticalFeed && !isCommand, liveBackdrop::setActive)
             DisposableEffect(liveBackdrop, pictureFrameSource) { onDispose { liveBackdrop.sourceChanged() } }
         }
-        // Portrait fit stacks the first two eligible scopes in canonical order under the picture; the
-        // others stay active and return in fill and landscape.
-        val portraitScopes =
-            if (isPortrait && !isPortraitFill && !isCommand) {
-                assists.shared.portraitScopes(scopesShown {
-                    assists.shared.rendersLive(it, effectiveDisplayMode, isPhotographyMode)
-                })
-            } else { emptyList() }
-        val scopeZone = monitorOperatorFittedScopeZone(fieldLayout)
         // Local framing is deliberately read from the operator store rather
         // than the camera session: grid/crosshair/guides are composited over
         // the existing feed zone and never alter the Nikon Grid Display.
@@ -1421,22 +1406,13 @@ internal fun MonitorScreen(
                 previewApplication is SwiftLiveViewPreviewState.Rejected, presentedFrames,
                 actualLinkHealth.presentation.signalBars)
         }
-        var prefersMediaDuration by rememberSaveable { mutableStateOf(false) }
-        // Portrait keeps a complete, compact label: the nearest whole unit, never a fraction.
-        // Duration mode and every non-portrait surface keep the existing labels.
-        fun mediaLabel(portrait: Boolean): String = if (relayedState != null) {
-            if (prefersMediaDuration) readoutRetention.media.durationLabel
-            else if (portrait) readoutRetention.media.freeBytes?.let {
-                "${MonitorStorageReadoutFormat.wholeUnitCapacity(it)} · ${readoutRetention.media.percentFree}%"
-            } ?: readoutRetention.media.capacityLabel
-            else readoutRetention.media.capacityLabel
-        } else {
-            val storage = sharedControlState.snapshot?.storage
-            if (prefersMediaDuration) storage?.recordingTimeLabel ?: "-- Min"
-            else storage?.storageReadout?.let {
-                if (portrait) MonitorStorageReadoutFormat.wholeUnitCapacity(it.freeBytes) else it.free
-            } ?: StorageReadout.UNAVAILABLE
-        }
+        var mediaForm by rememberSaveable { mutableIntStateOf(0) }
+        // Video storage steps free space, percentage, then estimated time (shared surface order).
+        fun mediaForms(): List<String> = if (relayedState != null) relayedMediaForms(readoutRetention.media)
+            else sharedControlState.snapshot?.storage.let {
+                StorageReadoutCycle.forms(it, photo = false)
+            }
+        fun mediaLabel(): String = mediaForms().let { it[mediaForm.mod(it.size)] }
         val watchRelayState =
             remember(
                 sessionState,
@@ -1791,7 +1767,8 @@ internal fun MonitorScreen(
                                 view.performOperatorHaptic(HapticFeedbackConstants.KEYBOARD_TAP)
                             }
                         } catch (error: CameraFocusException) {
-                            commonControl.onNote(focusFailureMessage(error, appContext))
+                            commonControl.onNote(error.message
+                                ?: appContext.getString(R.string.focus_change_rejected))
                         } finally {
                             focusMoveRequestsInFlight =
                                 (focusMoveRequestsInFlight - 1).coerceAtLeast(0)
@@ -1829,7 +1806,7 @@ internal fun MonitorScreen(
                         view.performOperatorHaptic(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
                 } catch (error: CameraFocusException) {
-                    commonControl.onNote(focusFailureMessage(error, appContext))
+                    commonControl.onNote(error.message ?: appContext.getString(R.string.focus_reset_failed))
                 } finally {
                     focusResetPending = false
                 }
@@ -1879,13 +1856,13 @@ internal fun MonitorScreen(
                 badgeIcon = cue.badge, dimmed = cue.dimmed,
                 // Where no quick adjust owns the hold, holding SHUTTER toggles the camera lock.
                 holdAction = if (cue.holdTogglesShutterLock && relayedState == null) shutterLongPressToggle else null,
+                group = setting.kind.captureGroup,
             )
         }
         val scopes = scopesShown { assists.shared.rendersLive(it, effectiveDisplayMode, isPhotographyMode) }
         val emptyScopes = remember { MutableStateFlow(com.opencapture.opencine.media.ScopeAssistBundle.EMPTY) }
         val scopeSource = monitorFrameSource?.let { source -> rememberNikonLiveScopeBundles(scopes,
-            portraitScopes, assists.shared, exposureAssistCameraInput, renderedEffects.lut, lutLibrary,
-            thermalTier, source, isPortrait, isPortraitFill, scopeZone) } ?: emptyScopes
+            assists.shared, exposureAssistCameraInput, thermalTier, source) } ?: emptyScopes
         val floating = MonitorAnalysisPanelLayout(physicalViewport, geometry.scopePlacement)
         val reference = liveFeedEffectsPresentation.falseColorReference?.let { value ->
             value.referenceValues().takeIf { it.segments.isNotEmpty() }
@@ -1946,12 +1923,9 @@ internal fun MonitorScreen(
         val usageStore = remember(appContext) { com.opencapture.opencine.appkit.MonitorToolUsagePreferences(
             appContext.getSharedPreferences("assist", android.content.Context.MODE_PRIVATE), "assistToolUsage.v1") }
         var usage by remember(usageStore) { mutableStateOf(usageStore.value) }
-        val instantPlaybackTitle = stringResource(R.string.monitor_instant_playback)
-        // The toolless chip's own word; a real tool's chip label is resolved from its resource below.
-        val instantPlaybackChip = stringResource(R.string.monitor_chip_play)
         val palette = liveAssistChips.map { chip ->
             val tool = (chip as? NikonAssistChip.Tool)?.tool
-            MonitorOperatorPaletteItem(chip.id, tool?.title ?: instantPlaybackTitle, tool?.chipLabel ?: instantPlaybackChip, tool,
+            MonitorOperatorPaletteItem(chip.id, tool?.title ?: stringResource(R.string.monitor_instant_playback), tool?.chipLabel ?: "PLAY", tool,
                 if (tool != null) assists.shared.isOn(tool) else assists.instantReview,
                 toggle = { haptics.selection(); if (tool != null) assists.shared.toggle(tool)
                     else assists.instantReview = !assists.instantReview }, hasOptions = tool?.nikonHasOptions == true,
@@ -1965,6 +1939,7 @@ internal fun MonitorScreen(
             stringResource(R.string.split_comparison_key), splitComparisonMuted) { splitComparisonMuted = !splitComparisonMuted } else null
         val identity = MonitorOperatorLiveIdentity(sharedControlState.snapshot?.session,
             sharedControlState.snapshot?.epoch, pictureFrameSource)
+        val currentPicture = rememberUpdatedState(pictureFrameSource)
         val statusStorage = if (isPhotographyMode && mounted(MonitorDisplaySection.TIMECODE)) {
             val storage = cameraProperties.storage
             val capacity = storage?.readout?.takeIf { photoPillShowsStorage && it.totalBytes != null }
@@ -1973,18 +1948,16 @@ internal fun MonitorScreen(
             val shots = cameraProperties.shotsRemaining.takeIf { capacity == null }
             MonitorOperatorLiveReadout<String, MonitorDisplaySection>("shots", stringResource(R.string.monitor_shots_remaining),
                 if (capacity != null) {
-                    val free = if (isPortrait) MonitorStorageReadoutFormat.wholeUnitCapacity(capacity.freeBytes)
-                        else capacity.free
-                    "$free ${capacity.percent}"
+                    // One live storage precision in every orientation (shared storage cycle).
+                    StorageReadoutCycle.forms(capacity.freeBytes, capacity.percent, null, photo = true).joinToString(" ")
                 } else shots?.let(MonitorTextFormat::shotsRemainingCompactLabel),
                 MonitorDisplaySection.TIMECODE, action = { photoPillShowsStorage = !photoPillShowsStorage },
                 icon = if (capacity == null) MonitorIcon.IMAGE else null,
                 accessibilityLabel = if (capacity != null) null
-                    else shots?.let(MonitorTextFormat::shotsRemainingAccessibilityLabel)
-                        ?: stringResource(R.string.monitor_shots_remaining_unknown))
-        } else if (mounted(MonitorDisplaySection.STORAGE)) MonitorOperatorLiveReadout("storage",
-            stringResource(R.string.monitor_media_remaining),
-            mediaLabel(isPortrait), MonitorDisplaySection.STORAGE, action = { prefersMediaDuration = !prefersMediaDuration }) else null
+                    else shots?.let(MonitorTextFormat::shotsRemainingAccessibilityLabel) ?: stringResource(R.string.monitor_shots_remaining_unknown))
+        } else if (mounted(MonitorDisplaySection.STORAGE)) MonitorOperatorLiveReadout("storage", stringResource(R.string.monitor_media_remaining),
+            mediaLabel(), MonitorDisplaySection.STORAGE,
+            action = { mediaForm = MonitorStorageReadoutFormat.nextForm(mediaForm, mediaForms().size) }) else null
         val resolutionKind = if (isPhotographyMode) MonitorPickerKind.SIZE else MonitorPickerKind.RESOLUTION
         val codecKind = if (isPhotographyMode) MonitorPickerKind.QUALITY else MonitorPickerKind.CODEC
         val panelValue = activeMonitorPicker?.let { picker -> MonitorOperatorCameraPanel(picker.kind.name,
@@ -1992,8 +1965,7 @@ internal fun MonitorScreen(
             if (picker.kind == MonitorPickerKind.QUALITY) 380f else 300f,
             chrome = if (picker.kind in ladderKinds) MonitorOperatorCameraPanelChrome.SHARED_SHEET else MonitorOperatorCameraPanelChrome.CONTENT,
             // Codec and colour are one popup: the codec picker carries the active codec's tones.
-            title = if (picker.kind == MonitorPickerKind.CODEC && codecColor.showsColor)
-                stringResource(R.string.monitor_codec_color_title) else picker.title,
+            title = if (picker.kind == MonitorPickerKind.CODEC && codecColor.showsColor) "CODEC · COLOR" else picker.title,
             subtitle = picker.subtitle) }
             ?: activeCommandControl?.let { request -> MonitorOperatorCameraPanel("command:${request.control.name}",
                 false, chrome = MonitorOperatorCameraPanelChrome.CONTENT, title = request.title,
@@ -2053,7 +2025,7 @@ internal fun MonitorScreen(
                     } catch (error: CameraControlException) {
                         if (admission.admits(session)) commandControlFeedback = CommandControlFeedback(
                             appContext.getString(R.string.control_error, captured.request.title,
-                                controlFailureMessage(error, appContext)), isError = true)
+                                error.message ?: appContext.getString(R.string.control_change_rejected)), isError = true)
                     }
                 }
             })
@@ -2072,13 +2044,8 @@ internal fun MonitorScreen(
             }
         }
         val source = MonitorOperatorLiveSource(
-            identity = {
-                MonitorOperatorLiveIdentity(
-                    sharedControlState.snapshot?.session,
-                    sharedControlState.snapshot?.epoch,
-                    pictureFrameSource,
-                )
-            },
+            identity = { MonitorOperatorLiveIdentity(commonControl.state.value.snapshot?.session,
+                commonControl.state.value.snapshot?.epoch, currentPicture.value) },
             available = available,
             picture = MonitorOperatorLivePicture(portraitFeedAspectRatio,
                 // A connected camera that has not delivered a picture yet looks exactly like a wedged one;
@@ -2102,7 +2069,7 @@ internal fun MonitorScreen(
                         else recordingFormat?.let(MonitorCapturePresentation::recordingLabel),
                         MonitorDisplaySection.FORMAT, action = { openSharedPicker(resolutionKind) }),
                 color = if (isPhotographyMode || !mounted(MonitorDisplaySection.COLOR)) null else
-                    MonitorOperatorLiveReadout(COLOR_READOUT_ID, stringResource(R.string.camera_color_title), codecColor.selectedColorChoice?.label ?: "--",
+                    MonitorOperatorLiveReadout(COLOR_READOUT_ID, "Color", codecColor.selectedColorChoice?.label ?: "--",
                         MonitorDisplaySection.COLOR, action = { openSharedPicker(MonitorPickerKind.CODEC) }),
                 recordingSection = MonitorDisplaySection.REC_READOUT,
                 timecodeSection = MonitorDisplaySection.TIMECODE,
@@ -2138,19 +2105,18 @@ internal fun MonitorScreen(
                 audioMeterStateDescription(resources.phoneStringResolver(), liveAudioLevels,
                     cameraProperties.microphoneSensitivity)) else null,
         )
-        // Scopes that are not fitted float; GUIDES, GRID and CROSS ride the picture in the camera's own
-        // orientation (they rotate with a vertical body), so the shared overlay leaves them alone.
-        val rendered = liveAssistTools.filter { tool ->
-            tool !in setOf(MonitorAssistTool.GUIDES, MonitorAssistTool.GRID, MonitorAssistTool.CROSS) &&
-                assists.shared.rendersLive(tool, effectiveDisplayMode, isPhotographyMode) &&
-                (tool !in ScopeKind.canonical.map { it.assistTool } ||
-                    (scopeSource !== emptyScopes && (!isPortrait || isPortraitFill || tool.scopeKind in portraitScopes)))
-        }.toSet()
+        // GUIDES, GRID and CROSS ride the picture in the camera's own orientation (they rotate with a
+        // vertical body), so the shared overlay leaves them alone.
+        val rendered = nikonLiveRenderedTools(liveAssistTools, scopesSampled = scopeSource !== emptyScopes) {
+            assists.shared.rendersLive(it, effectiveDisplayMode, isPhotographyMode)
+        }
         key(session) {
+            // The instant review covers the whole monitor (iOS): the floating assist palette moves
+            // into this window beneath it rather than staying in its popup window above it.
+            com.opencapture.opencine.cameracontrols.MonitorInstantReviewHost(presented = instantReviewState != null) {
             MonitorOperatorLiveSurface(commonControl, operatorSession, geometry, source,
                 MonitorOperatorLiveAssists(assistSource, palette, rendered, null, signal, usage,
-                    { usage = it; usageStore.value = it }, nikonUsageSeed,
-                    fitted = if (scopeSource !== emptyScopes) portraitScopes.map { it.assistTool } else emptyList()),
+                    { usage = it; usageStore.value = it }, nikonUsageSeed),
                 MonitorOperatorBodyViews(
                     dashboard = { accepts ->
                         // DISP 3 hero: the header's status, with no hero digits when nothing feeds
@@ -2428,9 +2394,9 @@ internal fun MonitorScreen(
                             request = commandPresentation.stabilization,
                             controlsEnabled = commandControlsEnabled,
                             currentSource = {
-                            stabilizationSource == sharedControlState.snapshot?.let { it.session to it.epoch } &&
-                                identity == MonitorOperatorLiveIdentity(sharedControlState.snapshot?.session,
-                                    sharedControlState.snapshot?.epoch, pictureFrameSource)
+                                stabilizationSource == commonControl.state.value.snapshot?.let { it.session to it.epoch } &&
+                                    identity == MonitorOperatorLiveIdentity(commonControl.state.value.snapshot?.session,
+                                        commonControl.state.value.snapshot?.epoch, currentPicture.value)
                             },
                             feedback = commandControlFeedback,
                             onSelect = { request, label ->
@@ -2449,17 +2415,17 @@ internal fun MonitorScreen(
                     capturing = stillCapturing, timerRemaining = photoTimerRemaining, bodyPulse = bodyShutterPulse,
                     onPressed = photoShutterPressed, onReleased = photoShutterReleased) },
             )
+            }
         }
 
-        if (gyroState != null) {
-            val state: GyroCaptureState = gyroState
-            if (isMonitorFront && activeMonitorPickerKind == null && activeCommandControl == null && !activeCommandStabilization &&
-                (state.enabled || state.failed) && (!isClean || state.failed)
-            ) {
-                // The shared badge slot keeps the pill and its touch target off the lock (ZT-06).
-                Box(Modifier.align(Alignment.TopStart).zone(fieldLayout.appBadge), contentAlignment = Alignment.CenterStart) {
-                    GyroStatusPill(state, onClick = onOpenGyroLogs)
-                }
+        gyroState?.takeIf { state ->
+            isMonitorFront && activeMonitorPickerKind == null && activeCommandControl == null && !activeCommandStabilization &&
+                (state.enabled || state.pill.kind == GyroPillKind.ERROR) &&
+                (!isClean || gyroPillVisibleInCleanMode(state.pill.kind))
+        }?.let { state ->
+            // The shared badge slot keeps the pill and its touch target off the lock (ZT-06).
+            Box(Modifier.align(Alignment.TopStart).zone(fieldLayout.appBadge), contentAlignment = Alignment.CenterStart) {
+                GyroPillChip(state.pill, onClick = onOpenGyroLogs)
             }
         }
 
@@ -2624,49 +2590,3 @@ private fun MonitorDisplayMode.labelResource(): Int =
 
 /** The colour readout's id; it opens the CODEC picker, which carries the colour section. */
 internal const val COLOR_READOUT_ID = "COLOR"
-
-/**
- * The operator copy for one typed recording failure. The exceptions carry English in the message
- * (logs and off-device tests keep it), so the monitor resolves the localized line by type.
- */
-internal fun recordingFailureMessage(error: CameraRecordingException, context: Context?): String =
-    lstr(
-        context,
-        when (error) {
-            CameraRecordingException.NotConnected -> R.string.recording_error_not_connected
-            CameraRecordingException.CoreUnavailable -> R.string.recording_error_core_unavailable
-            CameraRecordingException.MediaBusy -> R.string.recording_error_media_busy
-            CameraRecordingException.CommandRejected -> R.string.recording_error_command_rejected
-            CameraRecordingException.Unsupported -> R.string.recording_error_unsupported
-            CameraRecordingException.TransportFailed -> R.string.recording_error_transport_failed
-        },
-    )
-
-/** The operator copy for one typed control-write failure; the message stays English for logs. */
-internal fun controlFailureMessage(error: CameraControlException, context: Context?): String =
-    lstr(
-        context,
-        when (error) {
-            CameraControlException.NotConnected -> R.string.control_error_not_connected
-            CameraControlException.CoreUnavailable -> R.string.control_error_core_unavailable
-            CameraControlException.MediaBusy -> R.string.control_error_media_busy
-            CameraControlException.UnsupportedSelection -> R.string.control_error_unsupported
-            CameraControlException.CommandRejected -> R.string.control_error_command_rejected
-            CameraControlException.ReadbackMismatch -> R.string.control_error_readback_mismatch
-            CameraControlException.TransportFailed -> R.string.control_error_transport_failed
-        },
-    )
-
-/** The operator copy for one typed focus-point failure; the message stays English for logs. */
-internal fun focusFailureMessage(error: CameraFocusException, context: Context?): String =
-    lstr(
-        context,
-        when (error) {
-            CameraFocusException.NotConnected -> R.string.focus_error_not_connected
-            CameraFocusException.CoreUnavailable -> R.string.focus_error_core_unavailable
-            CameraFocusException.MediaBusy -> R.string.focus_error_media_busy
-            CameraFocusException.Unavailable -> R.string.focus_error_unavailable
-            CameraFocusException.CommandRejected -> R.string.focus_error_command_rejected
-            CameraFocusException.TransportFailed -> R.string.focus_error_transport_failed
-        },
-    )

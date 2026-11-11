@@ -21,8 +21,9 @@ actor MediaCellImageLoader {
 
     /// The downsampled image at `url` (long edge ≤ `maxPixelSize`), or `nil` if unreadable.
     /// `kCGImageSourceCreateThumbnailWithTransform` bakes in EXIF orientation, so the cell shows
-    /// exactly the picture a full decode would have. `fallbackOrientation` covers EXIF-stripped
-    /// camera thumbnails whose real orientation was learned from the full file.
+    /// exactly the picture a full decode would have. Camera thumbnails arrive tagged with their
+    /// still's orientation; `fallbackOrientation` covers thumbnails that still carry none (a HEIF
+    /// still's) once the row learned it from the full file.
     func downsampled(
         at url: URL, maxPixelSize: Int, fallbackOrientation: Int? = nil
     ) -> sending UIImage? {
@@ -35,6 +36,25 @@ actor MediaCellImageLoader {
                 source: source, maxPixelSize: maxPixelSize,
                 fallbackOrientation: fallbackOrientation)
         }
+    }
+
+    /// A cached thumbnail file, read and decoded on this actor: a cell never reads a file on the
+    /// main actor. `unreadable` (no file) and `undecodable` (bytes ImageIO refuses) stay distinct,
+    /// because only an undecodable cached thumb is removed by the cell's self-heal.
+    enum FileDecode: Sendable {
+        case image(UIImage)
+        case unreadable
+        case undecodable
+    }
+    func downsampled(
+        fileAt url: URL, maxPixelSize: Int, fallbackOrientation: Int? = nil
+    ) -> sending FileDecode {
+        guard let data = try? Data(contentsOf: url) else { return .unreadable }
+        guard
+            let image = downsampled(
+                data: data, maxPixelSize: maxPixelSize, fallbackOrientation: fallbackOrientation)
+        else { return .undecodable }
+        return .image(image)
     }
 
     /// In-memory variant for bytes that never touch disk (the instant-playback stream).
@@ -52,14 +72,7 @@ actor MediaCellImageLoader {
         }
     }
 
-    /// The EXIF orientation (1–8) recorded in the image bytes; nil when the file carries none
-    /// (the discriminator between "already upright" and "needs the cached fallback").
-    nonisolated static func exifOrientation(in data: Data) -> Int? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-        return exifOrientation(source: source)
-    }
-
-    /// File variant, used to learn a still's orientation from its streamed full bytes.
+    /// The EXIF orientation (1–8) of a still's streamed full file; nil when it carries none.
     nonisolated static func exifOrientation(atFile url: URL) -> Int? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
         return exifOrientation(source: source)
@@ -142,13 +155,18 @@ struct MediaBrowserView: View {
                                 ? record.payload.sizeBytes : nil,
                             durationSeconds: nil, dateKey: nil, colorLabel: nil,
                             progress: model.isClipStreaming(record.payload)
-                                ? model.mediaDownloadProgress[record.payload.id] : nil)
+                                ? model.mediaDownloadProgress[record.payload.id] : nil,
+                            // Every running camera stream has a reading (the player's, the
+                            // gallery's Download, a Share), and none outlives its stream.
+                            transferRate: model.mediaDownloadRates.rate(record.payload.id))
                     },
                     cell: { record, context in
                         model.mediaCellItem(
                             record.payload, list: context.list, selecting: context.selecting,
                             duration: context.duration, projection: projection)
-                    }, begin: begin, refresh: model.refreshCameraMediaInventory,
+                    },
+                    aspectRatio: { record in record.payload.uprightAspectRatio }, begin: begin,
+                    refresh: model.refreshCameraMediaInventory,
                     close: model.dismissMediaLibrary, open: open,
                     share: { records, token in
                         guard library.isCurrent(token),
@@ -161,7 +179,9 @@ struct MediaBrowserView: View {
                             library.isCurrent(token), capture.isCurrent
                         else { return }
                         deliveryRequest = .init(capture: capture)
-                    }
+                    },
+                    // The caching header scans cell facts only while a clip streams.
+                    cachingActive: { !model.mediaDownloadProgress.isEmpty }
                 ) { request in
                     let clip = request.record.payload
                     MediaClipThumbnail(
@@ -408,18 +428,21 @@ private struct MediaClipThumbnail: View {
             return image
         }
         let thumbPixels = list ? 480 : 640
-        if let thumbnailURL, let data = try? Data(contentsOf: thumbnailURL) {
+        if let thumbnailURL {
             // The camera's PTP thumbs can be EXIF-stripped — the row's learned orientation
             // stands in so portrait shots render upright.
-            if let image = await MediaCellImageLoader.shared.downsampled(
-                data: data, maxPixelSize: thumbPixels, fallbackOrientation: clip.exifOrientation)
+            switch await MediaCellImageLoader.shared.downsampled(
+                fileAt: thumbnailURL, maxPixelSize: thumbPixels,
+                fallbackOrientation: clip.exifOrientation)
             {
-                return present(image)
+            case .image(let image): return present(image)
+            case .undecodable:
+                // Self-heal: a cached thumb that doesn't decode would re-fail (and spam ImageIO
+                // errors) on every cell realisation. Deletes only the cached thumb, never the media.
+                guard isCurrent(), !Task.isCancelled else { return nil }
+                try? FileManager.default.removeItem(at: thumbnailURL)
+            case .unreadable: break
             }
-            // Self-heal: a cached thumb that doesn't decode would re-fail (and spam ImageIO
-            // errors) on every cell realisation. Deletes only the cached thumb, never the media.
-            guard isCurrent(), !Task.isCancelled else { return nil }
-            try? FileManager.default.removeItem(at: thumbnailURL)
         }
         if isPhoto, isDownloaded, let localURL,
             let image = await MediaCellImageLoader.shared.downsampled(
@@ -432,9 +455,8 @@ private struct MediaClipThumbnail: View {
             await model.ensureThumbnail(for: clip)
             guard isCurrent(), !Task.isCancelled else { return nil }
             if let cachedURL = model.clipThumbnailURL(clip),
-                let data = try? Data(contentsOf: cachedURL),
-                let image = await MediaCellImageLoader.shared.downsampled(
-                    data: data, maxPixelSize: thumbPixels,
+                case .image(let image) = await MediaCellImageLoader.shared.downsampled(
+                    fileAt: cachedURL, maxPixelSize: thumbPixels,
                     fallbackOrientation: clip.exifOrientation)
             {
                 return present(image)
@@ -629,6 +651,24 @@ struct MediaPhotoViewer: View {
     @State private var context: NikonPhotoContext?
     @State private var delivery: NikonDeliveryRequest?
 
+    /// The playback page's view assists on a still: the same panel stores, tool order and
+    /// offered tools as Nikon clip playback, with false colour and zebra menus that read the
+    /// still's own signal.
+    private var photoAssistTools: MonitorPhotoAssistTools<NikonMonitorLooks> {
+        let menus = NikonAssistMenuAdapter.photo(model: model)
+        let usage = Binding(
+            get: { [model] in model.assistToolUsage },
+            set: { [model] in model.assistToolUsage = $0 })
+        let signal = MonitorOperatorSignalOptions(
+            falseColor: AnyView(menus.falseColor), zebra: AnyView(menus.zebra),
+            reference: menus.falseColorReference)
+        return .init(
+            stores: model.scopePanels.playbackStores, looks: .signal, palette: LiveDesign.self,
+            usage: usage,
+            availableAssistTools: Set(model.playbackAssistPaletteTools.map(\.selection)),
+            signalOptions: signal, configureDisplay: nikonScopeDisplay)
+    }
+
     var body: some View {
         Group {
             if let context {
@@ -663,7 +703,8 @@ struct MediaPhotoViewer: View {
                             capture.isCurrent
                         else { return }
                         delivery = .init(capture: capture)
-                    }, deletedReturning: onDeletedReturning)
+                    }, deletedReturning: onDeletedReturning,
+                    assistTools: photoAssistTools)
             } else {
                 ProgressView().tint(MonitorTheme.accent).frame(
                     maxWidth: .infinity, maxHeight: .infinity
@@ -928,6 +969,9 @@ struct MediaPlayerView: View {
         }
         .onDisappear { model.isMediaPlaybackActive = false }
         .onChange(of: playing) { _, value in model.isMediaPlaybackActive = value }
+        // The player is a full-screen cover, so the root's download cover cannot present over
+        // it: the playback LUT picker asks this mount instead.
+        .redDownloadCover(model, host: .playback)
     }
 
     private var playing: Bool {
@@ -948,7 +992,7 @@ struct MediaPlayerView: View {
                 initialChromeVisible: !DemoHarness.playbackCleanView),
             makeSource: { context }, captureSource: { context.sourceAdmission },
             preview: { NikonPlaybackInspectorPreview(tool: $0, host: context.host) },
-            lookMenu: { NikonLUTPicker().environment(model) },
+            lookMenu: { NikonLUTPicker(downloadHost: .playback).environment(model) },
             deliveryPopup: { [model] request, dismiss in
                 request.popup(model, coordinator: context.delivery, onDismiss: dismiss)
             })

@@ -18,6 +18,7 @@ import com.opencapture.opencine.frameio.FrameioDeliveryController
 import com.opencapture.opencine.frameio.FrameioHopAvailability
 import com.opencapture.opencine.frameio.FrameioInternetHopState
 import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import java.io.File
 
 /** Canonical RED IPP2 Output Presets page — same URL as iOS RedDownloadView. */
@@ -42,13 +43,12 @@ internal fun RedLutDownloadScreen(
     val context = LocalContext.current
     val gate = remember(context) { RedLutDownloadGate(context.applicationContext) }
     val staging = remember(context) { File(context.applicationContext.noBackupFilesDir, "red-lut-import-staging") }
-    val pack = remember(context) { redLutPack(context) }
     MonitorLutPackDownloadScreen(
-        source = pack,
+        source = redLutPackSource(context),
         readiness = { gate.readiness().network.packReadiness(context) },
         hop = frameioController?.let { RedLutPackHop(it, context) },
-        noHopMessage = context.getString(R.string.red_no_hop),
-        hopFailedMessage = context.getString(R.string.red_hop_failed),
+        noHopMessage = stringResource(R.string.red_no_hop),
+        hopFailedMessage = stringResource(R.string.red_hop_failed),
         closeLabel = stringResource(R.string.action_close),
         importPack = { file -> lutLibrary.importPack(StoredLutCategory.RED, file, staging).redOutcome(context) },
         onClose = onClose,
@@ -57,12 +57,14 @@ internal fun RedLutDownloadScreen(
 }
 
 /** The Frame.io controller's camera access point hop, as the pack flow asks for it. */
-private class RedLutPackHop(private val controller: FrameioDeliveryController, private val context: Context) :
-    MonitorLutPackInternetHop {
+private class RedLutPackHop(
+    private val controller: FrameioDeliveryController,
+    private val context: Context?,
+) : MonitorLutPackInternetHop {
     override val ready: Boolean get() = controller.cameraHopAvailability == FrameioHopAvailability.READY
     override val unavailableMessage: String
         get() = controller.cameraHopAvailability.operatorMessage
-            .ifBlank { context.getString(R.string.red_hop_unavailable) }
+            .ifBlank { lstr(context, R.string.red_hop_unavailable) }
     override val switching: Boolean
         get() = controller.internetHopState is FrameioInternetHopState.LeavingCamera ||
             controller.internetHopState is FrameioInternetHopState.WaitingForInternet
@@ -72,28 +74,27 @@ private class RedLutPackHop(private val controller: FrameioDeliveryController, p
     override fun endAfterDismiss() = controller.endInternetHopAfterDismiss()
 }
 
-internal fun RedLutNetworkAvailability.packReadiness(context: Context): MonitorLutPackReadiness = MonitorLutPackReadiness(
+internal fun RedLutNetworkAvailability.packReadiness(context: Context?): MonitorLutPackReadiness = MonitorLutPackReadiness(
     when (this) {
         RedLutNetworkAvailability.AVAILABLE -> MonitorLutPackNetwork.AVAILABLE
         RedLutNetworkAvailability.ON_CAMERA_ACCESS_POINT -> MonitorLutPackNetwork.ON_CAMERA_ACCESS_POINT
         RedLutNetworkAvailability.NO_INTERNET -> MonitorLutPackNetwork.NO_INTERNET
         RedLutNetworkAvailability.SWIFT_CORE_UNAVAILABLE -> MonitorLutPackNetwork.POLICY_UNAVAILABLE
     },
-    context.getString(operatorMessageRes),
+    operatorMessage(context),
 )
 
 /** RED's words for what the import made of the download. */
-internal fun MonitorLutPackImportResult.redOutcome(context: Context): MonitorLutPackOutcome = when {
+internal fun MonitorLutPackImportResult.redOutcome(context: Context? = null): MonitorLutPackOutcome = when {
     importedCount > 0 -> MonitorLutPackOutcome.Imported(importedCount)
-    notAnArchive -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_not_archive))
-    archiveError != null -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_archive_error, archiveError))
-    foundCubeEntries == 0 -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_no_cubes))
-    rejectedCubeEntries > 0 -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_rejected, foundCubeEntries))
-    else -> MonitorLutPackOutcome.Failed(context.getString(R.string.red_outcome_unreadable))
+    notAnArchive -> MonitorLutPackOutcome.Failed(lstr(context, R.string.red_outcome_not_archive))
+    archiveError != null -> MonitorLutPackOutcome.Failed(lstr(context, R.string.red_outcome_archive_error, archiveError))
+    foundCubeEntries == 0 -> MonitorLutPackOutcome.Failed(lstr(context, R.string.red_outcome_no_cubes))
+    rejectedCubeEntries > 0 -> MonitorLutPackOutcome.Failed(lstr(context, R.string.red_outcome_rejected, foundCubeEntries))
+    else -> MonitorLutPackOutcome.Failed(lstr(context, R.string.red_outcome_unreadable))
 }
 
-/** Builds the RED pack source with copy resolved in the operator's language. */
-internal fun redLutPack(context: Context): MonitorLutPackSource = MonitorLutPackSource(
+internal fun redLutPackSource(context: Context?): MonitorLutPackSource = MonitorLutPackSource(
     pageUrl = RED_IPP2_PRESETS_URL,
     archiveFileName = "red-ipp2-presets.zip",
     isAllowedDownload = ::isAllowedRedDownloadUrl,
@@ -102,23 +103,26 @@ internal fun redLutPack(context: Context): MonitorLutPackSource = MonitorLutPack
     loadingScript = RED_LOADING_JS,
     helperScript = RED_HELPER_JS,
     copy = MonitorLutPackCopy(
-        intro = context.getString(R.string.red_copy_intro),
-        introDetail = context.getString(R.string.red_copy_intro_detail),
-        continueLabel = context.getString(R.string.red_copy_continue),
-        hopReady = context.getString(R.string.red_copy_hop_ready),
-        hopUnavailable = context.getString(R.string.red_copy_hop_unavailable),
-        downloading = context.getString(R.string.red_copy_downloading),
-        success = { count ->
-            if (count == 1) context.getString(R.string.red_copy_success_one)
-            else context.getString(R.string.red_copy_success_other, count)
-        },
-        successDetail = context.getString(R.string.red_copy_success_detail),
-        unexpectedSite = context.getString(R.string.red_copy_unexpected_site),
-        noFile = context.getString(R.string.red_copy_no_file),
-        pageFailed = context.getString(R.string.red_copy_page_failed),
-        httpFailure = { code -> context.getString(R.string.red_copy_http_failure, code) },
-        webPageInsteadOfArchive = context.getString(R.string.red_copy_web_page),
-        notAnArchive = context.getString(R.string.red_copy_not_archive),
+        intro = lstr(context, R.string.red_copy_intro),
+        introDetail = lstr(context, R.string.red_copy_intro_detail),
+        continueLabel = lstr(context, R.string.red_copy_continue),
+        hopReady = lstr(context, R.string.red_copy_hop_ready),
+        hopUnavailable = lstr(context, R.string.red_copy_hop_unavailable),
+        downloading = lstr(context, R.string.red_copy_downloading),
+        success = { count -> if (count == 1) lstr(context, R.string.red_copy_success_one) else lstr(context, R.string.red_copy_success_other, count) },
+        successDetail = lstr(context, R.string.red_copy_success_detail),
+        unexpectedSite = lstr(context, R.string.red_copy_unexpected_site),
+        noFile = lstr(context, R.string.red_copy_no_file),
+        pageFailed = lstr(context, R.string.red_copy_page_failed),
+        httpFailure = { code -> lstr(context, R.string.red_copy_http_failure, code) },
+        webPageInsteadOfArchive = lstr(context, R.string.red_copy_web_page),
+        notAnArchive = lstr(context, R.string.red_copy_not_archive),
+        blockedTitle = lstr(context, R.string.red_copy_blocked_title),
+        switching = lstr(context, R.string.red_copy_switching),
+        hopAction = lstr(context, R.string.red_copy_hop_action),
+        importing = lstr(context, R.string.red_copy_importing),
+        failedTitle = lstr(context, R.string.red_copy_failed_title),
+        downloadFailed = lstr(context, R.string.red_copy_download_failed),
     ),
 )
 

@@ -3,8 +3,8 @@ package com.opencapture.openzcine.lut
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import androidx.annotation.StringRes
 import com.opencapture.openzcine.R
+import com.opencapture.openzcine.lstr
 import java.net.URI
 
 /** Must match `LUTLibraryWire.redAvailabilityRecordVersion` on the Swift/JNI side. */
@@ -44,12 +44,15 @@ data class RedLutDownloadConfiguration(
 }
 
 /** Network state originating in shared `RedLUTDownloadPolicy`, not Kotlin policy reimplementation. */
-enum class RedLutNetworkAvailability(@StringRes val operatorMessageRes: Int) {
+enum class RedLutNetworkAvailability(val operatorMessageRes: Int) {
     AVAILABLE(R.string.red_net_available),
     ON_CAMERA_ACCESS_POINT(R.string.red_net_camera_ap),
     NO_INTERNET(R.string.red_net_no_internet),
     SWIFT_CORE_UNAVAILABLE(R.string.red_net_swift_unavailable),
 }
+
+/** Operator-facing message, resolved against the device locale when [context] is present. */
+internal fun RedLutNetworkAvailability.operatorMessage(context: Context?): String = lstr(context, operatorMessageRes)
 
 /** Truthful readiness report for the RED tab. `canEnterWorkflow` is false in public builds. */
 data class RedLutDownloadReadiness(
@@ -62,17 +65,13 @@ data class RedLutDownloadReadiness(
 
     /** Why no download button is available yet, without implying a fixture or a configured RED flow. */
     val configurationMessage: String?
-        get() = if (configuration.isAuthorized) null else RED_DOWNLOAD_UNCONFIGURED_MESSAGE
-
-    /** Localized [configurationMessage] for UI surfaces. */
-    fun configurationMessage(context: Context): String? =
-        if (configuration.isAuthorized) null else context.getString(R.string.red_download_unconfigured)
+        get() =
+            if (configuration.isAuthorized) {
+                null
+            } else {
+                lstr(null, R.string.red_download_unconfigured)
+            }
 }
-
-/** English fallback for JVM contexts; UI surfaces resolve `R.string.red_download_unconfigured`. */
-private const val RED_DOWNLOAD_UNCONFIGURED_MESSAGE =
-    "RED download is not configured for Android. An authorized HTTPS endpoint, RED terms " +
-        "revision, and operator acknowledgement flow are required before downloads can be enabled."
 
 /**
  * Platform reachability adapter for the shared RED download policy. Camera AP detection is based

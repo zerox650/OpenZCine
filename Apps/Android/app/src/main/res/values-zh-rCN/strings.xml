@@ -1034,6 +1034,12 @@
     <string name="red_copy_http_failure">RED 返回 HTTP %1$d。请重试。</string>
     <string name="red_copy_web_page">RED 返回的是网页而非 LUT 压缩包。请重新接受条款并重试。</string>
     <string name="red_copy_not_archive">RED 的下载不是 zip 压缩包。请重试。</string>
+    <string name="red_copy_blocked_title">需要互联网</string>
+    <string name="red_copy_switching">正在切换网络…</string>
+    <string name="red_copy_hop_action">通过互联网下载</string>
+    <string name="red_copy_importing">正在添加 LUT…</string>
+    <string name="red_copy_failed_title">下载失败</string>
+    <string name="red_copy_download_failed">下载失败。</string>
 
     <!-- Multiview 操作员文案（MulticamCoordinator / MulticamStage / 设置 / LUT 面板） -->
     <string name="multicam_session_full">Multiview 最多容纳四台相机。</string>
@@ -1236,6 +1242,7 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="still_preview_no_thumbnail">相机未提供缩略图。</string>
     <string name="still_preview_transfer_failed">相机图像传输失败。</string>
     <string name="still_preview_transfer_cancelled">相机图像传输已取消。</string>
+    <string name="still_preview_preparing">正在准备相机缩略图…</string>
     <string name="gyro_share_not_finalized">此陀螺仪日志尚未完成。</string>
     <string name="gyro_share_directory_missing">共享目录缺失。</string>
     <string name="gyro_share_publish_failed">无法发布陀螺仪日志的共享副本。</string>

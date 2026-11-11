@@ -548,9 +548,21 @@ struct DrumSideAdjustButton: View {
     let model: NativeAppModel
     var compact: Bool = false
     var context: ViewAssistContext = .liveView
+    /// The signal the menus read when it is not the context's camera signal.
+    var signalMapping: ExposureSignalMapping? = nil
+
+    /// The menus of a still in the media viewer. A still is a display-referred full-range
+    /// picture (the shared still renderer reads it as Rec.709 codes up to 255), so zebra
+    /// thresholds and the false colour key read that signal, not the clip's log curve, while
+    /// the tools stay the playback set.
+    static func photo(model: NativeAppModel) -> Self {
+        Self(model: model, context: .playback, signalMapping: .stills(toneMode: nil))
+    }
 
     private var mapping: ExposureSignalMapping {
-        context == .playback ? model.playbackExposureSignalMapping : model.exposureSignalMapping
+        signalMapping
+            ?? (context == .playback
+                ? model.playbackExposureSignalMapping : model.exposureSignalMapping)
     }
 
     /// The shared monitor scale order, with camera calibration supplied separately.
@@ -677,7 +689,7 @@ struct DrumSideAdjustButton: View {
                         $0)
                 }),
             zoomHelp:
-                "Magnifies only the chroma trace; the graticule stays at unity. The vectorscope reads the monitor image after its active LUT or display tone map.",
+                "Magnifies only the chroma trace; the graticule stays at unity. The vectorscope reads the camera signal through the built-in display tone map, whatever LUT is on.",
             brightnessHelp: "Raise trace intensity when the chroma plot is hard to read.",
             compact: compact, zoomFeedback: selectionFeedback)
     }
@@ -736,8 +748,13 @@ struct DrumSideAdjustButton: View {
 /// Nikon supplies catalogue values and actions; the shared picker owns tabs, rows and import UI.
 struct NikonLUTPicker: View {
     let embedded: Bool
+    /// The surface this picker lives on, which presents the RED download it asks for.
+    let downloadHost: RedDownloadHost
 
-    init(embedded: Bool = true) { self.embedded = embedded }
+    init(embedded: Bool = true, downloadHost: RedDownloadHost = .root) {
+        self.embedded = embedded
+        self.downloadHost = downloadHost
+    }
     @Environment(NativeAppModel.self) private var model
     @State private var redFilter = RedOutputFilter.all
 
@@ -805,7 +822,7 @@ struct NikonLUTPicker: View {
                 action: .init(
                     title: "Download from RED",
                     systemImage: availability.isAvailable ? "arrow.down.circle" : "wifi.slash",
-                    perform: { model.isRedDownloadPresented = true })))
+                    perform: { model.redDownloadHost = downloadHost })))
         let custom = storedLibrary(
             .custom, files: model.customLUTs,
             empty: .init(
@@ -1159,10 +1176,11 @@ struct OperatorSettingsPanel: View {
             gyro: .init(
                 enabled: Binding(
                     get: { model.gyroCapture.enabled }, set: { model.setGyroCaptureEnabled($0) }),
-                status: model.gyroCapture.failure ?? model.gyroCapture.statusText,
-                openLogs: model.gyroCapture.openLogs,
-                mountName: model.gyroCapture.mountName,
-                configureMount: model.gyroCapture.openMount)
+                status: GyroCopy.pillA11y(model.gyroCapture.pill.kind, warning: false),
+                available: model.gyroSettingsAvailable,
+                openLogs: { model.gyroCapture.logsPresented = true },
+                calibrate: model.gyroCapture.canCalibrate
+                    ? { model.gyroCapture.beginCalibration() } : nil)
         )
     }
 
@@ -1224,7 +1242,7 @@ struct OperatorSettingsPanel: View {
                 choice(
                     id: "picture.source", title: "Picture Source",
                     help:
-                        "Where the monitor's image comes from. HDMI shows the camera's clean output through a USB capture device — full rate, no live-view compression — while exposure, focus, record and the media browser keep working over the camera link. The AF boxes, the camera's audio meter and its timecode travel inside the live-view stream, so they leave with it.",
+                        "Where the monitor's image comes from. HDMI shows the camera's clean output through a USB capture device (full rate, no live-view compression) while exposure, focus, record and the media browser keep working over the camera link. The AF boxes, the camera's audio meter and its timecode travel inside the live-view stream, so they leave with it.",
                     options: selectableVideoSources.map(\.title), value: model.videoSource.title
                 ) { value in
                     if let kind = selectableVideoSources.first(where: { $0.title == value }) {
@@ -1237,7 +1255,7 @@ struct OperatorSettingsPanel: View {
                 .init(
                     id: "picture.capture", title: "Capture Device",
                     help:
-                        "The attached USB capture device, the format it is sending, and what the signal claims to be (primaries/transfer/matrix). If the picture shows the device's own \"No Signal\" card while this still reads a healthy rate, the camera's HDMI output resolution is one the device cannot lock onto — 4K is the usual culprit, and 1080p is the safe choice. Set the camera to a clean output too, or its overlays arrive as part of the picture. And if the image looks flat or green-tinted next to the camera's own live view, the camera is sending its recording gamma (N-Log/HLG) over HDMI — apply your monitoring LUT, or set the camera's HDMI output to SDR.",
+                        "The attached USB capture device, the format it is sending, and what the signal claims to be (primaries/transfer/matrix). If the picture shows the device's own \"No Signal\" card while this still reads a healthy rate, the camera's HDMI output resolution is one the device cannot lock onto. 4K is the usual culprit, and 1080p is the safe choice. Set the camera to a clean output too, or its overlays arrive as part of the picture. And if the image looks flat or green-tinted next to the camera's own live view, the camera is sending its recording gamma (N-Log/HLG) over HDMI. Apply your monitoring LUT, or set the camera's HDMI output to SDR.",
                     value: .reported(model.hdmiCaptureState.shortStatus)))
         }
         if model.videoSource == .relay {
@@ -1301,7 +1319,7 @@ struct OperatorSettingsPanel: View {
                     .init(
                         id: "processing.denoise", title: "Feed Noise Reduction",
                         help:
-                            "Averages the live view against the frames either side of it to reduce sensor noise, which is worth having on a dim high-ISO set. It only removes grain that CHANGES between frames — the blocky structure of a compressed stream stays put — and it holds two frames back to see ahead, so the picture lags the camera slightly. The recording is never affected.",
+                            "Averages the live view against the frames either side of it to reduce sensor noise, which is worth having on a dim high-ISO set. It only removes grain that CHANGES between frames (the blocky structure of a compressed stream stays put), and it holds two frames back to see ahead, so the picture lags the camera slightly. The recording is never affected.",
                         value: .toggle(
                             .init(
                                 value: Binding(
@@ -1325,7 +1343,7 @@ struct OperatorSettingsPanel: View {
         .init(
             enabled: model.videoSource != .relay,
             unavailableHelp:
-                "This device is watching another device's broadcast. Sharing is done from the broadcasting device — re-sharing a received feed would stack a second encode and a second hop of delay on everyone downstream.",
+                "This device is watching another device's broadcast. Sharing is done from the broadcasting device. Re-sharing a received feed would stack a second encode and a second hop of delay on everyone downstream.",
             sharing: Binding(
                 get: { model.isRelayBroadcasting }, set: { model.setRelayBroadcasting($0) }),
             passcode: Binding(
