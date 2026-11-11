@@ -1303,6 +1303,12 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="picker_iso_title">ISO</string>
     <string name="picker_iso_auto">Auto</string>
     <string name="picker_iso_manual">Manual</string>
+    <string name="picker_iso_low_base">Low Base</string>
+    <string name="picker_iso_high_base">High Base</string>
+    <string name="picker_iso_auto_on">Auto On</string>
+    <string name="picker_iso_auto_off">Auto Off</string>
+    <string name="picker_iso_camera_controls">Camera controls ISO</string>
+    <string name="picker_iso_manual_iso">Manual ISO</string>
     <string name="picker_drive_title">DRIVE</string>
     <string name="picker_release_mode">Release mode</string>
     <string name="picker_drive_label">Drive</string>
@@ -1329,6 +1335,9 @@ The full terms are https://openzcine.app/terms/</string>
     <string name="picker_tier_normal">Normal</string>
     <string name="picker_tier_basic">Basic</string>
     <string name="picker_sensitivity">Sensitivity</string>
+    <string name="picker_sensitivity_dual_base">Sensitivity · dual base</string>
+    <string name="picker_sensitivity_auto_manual">Sensitivity · auto / manual</string>
+    <string name="picker_sensitivity_auto_m">Sensitivity · auto (M mode for manual)</string>
     <string name="picker_speed">Speed</string>
     <string name="picker_aperture">Aperture</string>
     <string name="instant_playback">Instant playback</string>

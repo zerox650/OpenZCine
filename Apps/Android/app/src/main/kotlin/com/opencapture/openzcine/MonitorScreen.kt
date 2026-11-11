@@ -341,7 +341,7 @@ internal fun MonitorScreen(
     val cameraProperties by session.cameraProperties.collectAsState()
     // Real press-tracked still release over the session (single, bulb/time,
     // and hold-to-burst with the remote-mode bracket). [verify-on-HW]
-    val stillCapture = remember(session) { StillCaptureController(session) }
+    val stillCapture = remember(session) { StillCaptureController(session, context = appContext) }
     val stillCapturing by stillCapture.isCapturing.collectAsState()
     // Post-capture instant playback (PLAY view-assist tool).
     val instantReview = remember(session) { InstantReviewController(session) }
@@ -647,6 +647,7 @@ internal fun MonitorScreen(
                 shutterLockedOnCamera = effectiveShutterLocked,
                 isoAuto = cameraProperties.isoAuto,
                 exposureMode = cameraProperties.exposureMode,
+                context = appContext,
             ).let { settings ->
                 // A watcher's strip shows the broadcaster's values (iOS `applyRelayState`);
                 // no local session ever fills these cells.
@@ -681,12 +682,13 @@ internal fun MonitorScreen(
                             .firstOrNull { it.kind == MonitorPickerKind.WHITE_BALANCE }
                             ?.picker,
                     photoTimerDelaySeconds = photoTimerDelaySeconds,
+                    context = appContext,
                 )
             }
         }
     val photographyTopPickers =
         remember(cameraProperties, isPhotographyMode) {
-            if (isPhotographyMode) photographyTopBarPickers(cameraProperties) else emptyMap()
+            if (isPhotographyMode) photographyTopBarPickers(cameraProperties, context = appContext) else emptyMap()
         }
     val activeMonitorPicker =
         if (isPhotographyMode) {
@@ -1026,7 +1028,7 @@ internal fun MonitorScreen(
                         recordConfirmationPending = recordConfirmationOpen,
                         cameraControlPending = pendingCommandControl != null,
                     )
-                executeWearRecordCommand(safety, recording) { target ->
+                executeWearRecordCommand(safety, recording, context = appContext) { target ->
                     if (source !== session || !admission.admits(source)) throw CameraRecordingException.CommandRejected
                     val snapshot = commonSession.refresh()
                     val dispatch = com.opencapture.opencine.core.CommandDispatchAdmission(

@@ -371,6 +371,7 @@ internal fun monitorCaptureSettings(
                         shutterTile?.unavailableReason
                             ?.contains("locked", ignoreCase = true) == true
                     ),
+            context = context,
         )
     // iOS CameraDisplayState.preview order: ISO · SHUTTER · IRIS · WB · FOCUS.
     return listOf(
@@ -841,7 +842,10 @@ internal fun isoPickerPresentation(
         return null
     }
     val title = strings.resolve(R.string.camera_label_iso)
-    val subtitle = IsoPickerPolicy.pickerSubtitle(codec, exposureMode)
+    // The shared ISO policy returns English prose ("Sensitivity · auto / manual"). Map that full
+    // wording to a resource so an attached context resolves the operator's language while JVM
+    // callers keep the canonical English copy.
+    val subtitle = localizedIsoSubtitle(codec, exposureMode, context)
     val ladder = IsoPickerPolicy.unifiedOptions
     // Inject Auto-driven values outside the fixed ladder (e.g. 51200).
     val options =
@@ -863,8 +867,8 @@ internal fun isoPickerPresentation(
                         includingLiveISO = live,
                     )
                 MonitorPickerModePresentation(
-                    label = mode.title,
-                    detail = mode.detail,
+                    label = localizedIsoModeLabel(mode.title, context),
+                    detail = localizedIsoModeDetail(mode.detail, context),
                     request =
                         CommandControlRequest(
                             title = title,
@@ -947,8 +951,8 @@ internal fun isoPickerPresentation(
                 }
             val baseValue = if (index == 0) "Low" else "High"
             MonitorPickerModePresentation(
-                label = mode.title,
-                detail = mode.detail,
+                label = localizedIsoModeLabel(mode.title, context),
+                detail = localizedIsoModeDetail(mode.detail, context),
                 request =
                     CommandControlRequest(
                         title = title,
@@ -973,7 +977,7 @@ internal fun isoPickerPresentation(
         subtitle = subtitle,
         modes = modes,
         initialModeIndex = if (highBase) 1 else 0,
-        popup = isoPopup(title, subtitle, codec, live).copy(circuitIndex = if (highBase) 1 else 0, dualBaseIso = true),
+        popup = isoPopup(title, subtitle, codec, live, context).copy(circuitIndex = if (highBase) 1 else 0, dualBaseIso = true),
     )
 }
 
@@ -983,6 +987,34 @@ private fun isoPopup(title: String, subtitle: String, codec: String, live: Strin
     kind = NikonCapturePopupKind.ISO, title = title, subtitle = subtitle, modes = emptyList(),
     codec = codec, liveIso = live?.toIntOrNull(), context = context,
 )
+
+/**
+ * The shared ISO policy keeps protocol-stable English titles for its mode tabs. Only the
+ * operator-facing label and detail are swapped here; the request values ("Low"/"High" and the
+ * ISO ladders) stay untouched so camera writes and relay round-trips still match.
+ */
+private fun localizedIsoModeLabel(title: String, context: Context?): String = when (title) {
+    "Low Base" -> lstr(context, R.string.picker_iso_low_base)
+    "High Base" -> lstr(context, R.string.picker_iso_high_base)
+    "Auto On" -> lstr(context, R.string.picker_iso_auto_on)
+    "Auto Off" -> lstr(context, R.string.picker_iso_auto_off)
+    else -> title
+}
+
+private fun localizedIsoModeDetail(detail: String?, context: Context?): String? = when (detail) {
+    "Camera controls ISO" -> lstr(context, R.string.picker_iso_camera_controls)
+    "Manual ISO" -> lstr(context, R.string.picker_iso_manual_iso)
+    else -> detail
+}
+
+/** Keep the shared policy's full subtitle wording, localized when a context is attached. */
+private fun localizedIsoSubtitle(codec: String, exposureMode: String?, context: Context?): String =
+    when (IsoPickerPolicy.pickerSubtitle(codec, exposureMode)) {
+        "Sensitivity · dual base" -> lstr(context, R.string.picker_sensitivity_dual_base)
+        "Sensitivity · auto / manual" -> lstr(context, R.string.picker_sensitivity_auto_manual)
+        "Sensitivity · auto (M mode for manual)" -> lstr(context, R.string.picker_sensitivity_auto_m)
+        else -> lstr(context, R.string.picker_sensitivity)
+    }
 
 /** The common capture setting this picker edits; null for a Nikon-only picker. */
 internal val MonitorPickerKind.commonSettingKey: SettingKey?

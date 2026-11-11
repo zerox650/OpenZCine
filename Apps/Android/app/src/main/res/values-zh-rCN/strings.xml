@@ -1300,6 +1300,12 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="picker_iso_title">感光度</string>
     <string name="picker_iso_auto">自动</string>
     <string name="picker_iso_manual">手动</string>
+    <string name="picker_iso_low_base">低基准</string>
+    <string name="picker_iso_high_base">高基准</string>
+    <string name="picker_iso_auto_on">自动开启</string>
+    <string name="picker_iso_auto_off">自动关闭</string>
+    <string name="picker_iso_camera_controls">由相机控制 ISO</string>
+    <string name="picker_iso_manual_iso">手动 ISO</string>
     <string name="picker_drive_title">驱动</string>
     <string name="picker_release_mode">释放模式</string>
     <string name="picker_drive_label">驱动</string>
@@ -1326,6 +1332,9 @@ OpenZCine 远程控制实体摄影设备。无线链路可能中断，设置写�
     <string name="picker_tier_normal">标准</string>
     <string name="picker_tier_basic">基本</string>
     <string name="picker_sensitivity">感光度</string>
+    <string name="picker_sensitivity_dual_base">感光度 · 双基准</string>
+    <string name="picker_sensitivity_auto_manual">感光度 · 自动 / 手动</string>
+    <string name="picker_sensitivity_auto_m">感光度 · 自动（M 档可手动）</string>
     <string name="picker_speed">速度</string>
     <string name="picker_aperture">光圈</string>
     <string name="instant_playback">即时回放</string>

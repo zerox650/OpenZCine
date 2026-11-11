@@ -284,7 +284,7 @@ internal fun photographyCaptureSettings(
             // Camera truth: the body's Auto-ISO readback picks the open tab.
             initialModeIndex = if (properties.isoAuto == true) 0 else 1,
             popup = NikonCapturePopupState(
-                kind = NikonCapturePopupKind.STILL_ISO, title = lstr(context, R.string.picker_iso_title), subtitle = "Sensitivity", modes = emptyList(),
+                kind = NikonCapturePopupKind.STILL_ISO, title = lstr(context, R.string.picker_iso_title), subtitle = lstr(context, R.string.picker_sensitivity), modes = emptyList(),
                 circuitIndex = if (properties.isoAuto == true) 0 else 1, photography = true,
                 liveIso = properties.iso?.toInt(), stillAllowsManualIso = allowsManualISO, context = context,
             ),
