@@ -25,7 +25,22 @@ object SwiftCore {
         // it is loaded through NikonNative, which then reports them available too. MainActivity
         // touches this first thing in onCreate, before any camera session exists.
         if (!NikonNative.load("OpenZCineAndroid")) return@lazy false
-        if (!GyroNative.load("OpenZCineAndroid")) return@lazy false
+        // Gyro joined the shared Swift core after the Nikon/session natives. A staged
+        // libOpenZCineAndroid.so built before that (for example the cached Windows seed)
+        // still loads fine but exports none of the gyro JNI symbols, so a bare
+        // load() reports success and GyroCaptureCoordinator crashes on its first
+        // armingCreate at startup. Probe one export before marking gyro available:
+        // every gyro native call is gated on GyroNative.isAvailable, so leaving it
+        // false degrades only gyro and keeps the camera session and the rest of the
+        // core working. A fully staged core passes the probe and gyro recovers on its own.
+        val gyroExportsAvailable =
+            try {
+                GyroNative.calibrationValidate("{}")
+                true
+            } catch (_: UnsatisfiedLinkError) {
+                false
+            }
+        if (gyroExportsAvailable) GyroNative.load("OpenZCineAndroid")
         // Swift Foundation on Android resolves `TimeZone.current` from the libc zone
         // ABBREVIATION ("KST", "CEST"), which ICU rarely recognises, and falls back to
         // GMT, so every Calendar.current wall clock in the core was UTC. The camera
