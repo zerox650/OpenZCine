@@ -872,9 +872,10 @@ private fun ClipArtwork(
                             SwiftCore.isAvailable &&
                             connectionOwner != null
                     ) {
-                        // Tagged with the still's own orientation by the shared Nikon layer; one that
-                        // carries none falls back to what this session learned from the full file.
-                        NikonNative.sessionUprightThumbnail(connectionOwner, clip.handle.toInt(), clip.filename)?.let { jpeg ->
+                        // Orientation-tagged when the Swift core exports that port; older cores
+                        // fall back to the plain embedded thumbnail. One that carries no tag
+                        // falls back to what this session learned from the full file.
+                        NikonThumbnailCompat.load(connectionOwner, clip.handle.toInt(), clip.filename)?.let { jpeg ->
                             // The tag answers the still's orientation, which also sizes its grid card.
                             MonitorBitmapDecoder.exifOrientation(jpeg)?.let {
                                 MediaExifOrientation.learn(clip.libraryKey(cameraID), it)

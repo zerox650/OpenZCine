@@ -25,4 +25,16 @@ class NikonStillDeliveryTest {
         assertEquals("DSC_0001.JPG", still.filename)
         assertTrue(MonitorDeliverySelectionFacts(listOf(still), 1, null).allStills)
     }
+
+    /**
+     * Windows hosts package a cached Swift core that lacks `sessionUprightThumbnail`. A missing
+     * JNI symbol raises UnsatisfiedLinkError (an Error, not an Exception) and crashed the media
+     * browser on the first camera thumbnail. JVM tests load no native library either, so this
+     * exercises the same failure shape: the compat port must degrade quietly instead of throwing.
+     */
+    @Test fun thumbnailDegradesWhenUprightJniSymbolIsMissing(): Unit {
+        assertNull(NikonThumbnailCompat.load(0L, 1, "DSC_0001.JPG"))
+        // The missing symbol is remembered, so later cards do not retry it.
+        assertNull(NikonThumbnailCompat.load(0L, 2, "DSC_0002.JPG"))
+    }
 }

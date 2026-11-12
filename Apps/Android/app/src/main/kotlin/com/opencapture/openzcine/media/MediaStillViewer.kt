@@ -32,6 +32,34 @@ import kotlinx.coroutines.withContext
 
 private const val PROGRESSIVE_DECODE_STEP_BYTES = 256L * 1_024L
 
+/**
+ * Windows hosts package a cached Swift core that predates
+ * `NikonNative.sessionUprightThumbnail`. Calling a JNI method the loaded library does not
+ * export raises [UnsatisfiedLinkError] (an Error, not an Exception), which took down the media
+ * browser the moment a camera thumbnail was requested. Prefer the orientation-tagged entry
+ * point and, once the older library is detected, use its plain embedded-thumbnail port so
+ * stills keep working instead of being disabled.
+ */
+internal object NikonThumbnailCompat {
+    @Volatile
+    private var uprightAvailable = true
+
+    fun load(connectionOwner: Long, handle: Int, filename: String): ByteArray? {
+        if (uprightAvailable) {
+            try {
+                return NikonNative.sessionUprightThumbnail(connectionOwner, handle, filename)
+            } catch (_: UnsatisfiedLinkError) {
+                uprightAvailable = false
+            }
+        }
+        return try {
+            NikonNative.sessionThumbnail(connectionOwner, handle)
+        } catch (_: UnsatisfiedLinkError) {
+            null
+        }
+    }
+}
+
 /** Native image/record ports composed into the complete shared still-picture owner. */
 @Composable
 internal fun MediaStillViewer(
@@ -151,7 +179,7 @@ private class NikonStillPictureIO(
         val value = request.record.payload
         val bitmap = withContext(Dispatchers.IO) {
             if (!cameraTransferAvailable || !SwiftCore.isAvailable || connectionOwner == null || !request.isCurrent()) null
-            else NikonNative.sessionUprightThumbnail(connectionOwner, value.clip.handle.toInt(), value.clip.filename)?.let { jpeg ->
+            else NikonThumbnailCompat.load(connectionOwner, value.clip.handle.toInt(), value.clip.filename)?.let { jpeg ->
                 if (!request.isCurrent()) null else MonitorBitmapDecoder.decode(
                     jpeg, MonitorBitmapDecoder.PAGE_EDGE,
                     fallbackOrientation = MediaExifOrientation.learned(value.clip.libraryKey(value.bucket)),
